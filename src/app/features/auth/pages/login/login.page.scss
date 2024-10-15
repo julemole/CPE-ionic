@@ -1,0 +1,53 @@
+
+.main-container {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.title {
+  text-align: center;
+  font-size: 2rem;
+}
+
+.help-text {
+  text-align: center;
+  font-size: .8rem;
+  margin-bottom: 1rem;
+}
+
+.logo {
+  width: 100%;
+  max-width: 150px;
+  margin: 0 auto;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.inp-style{
+  position: relative;
+}
+
+.icon {
+  position: absolute;
+  color: var(--ion-color-primary);
+  font-size: 1.5rem;
+  right: 1rem;
+  top: 30%;
+  z-index: 2;
+}
+
+.forgot-pass {
+  display: block;
+  margin-top: .5rem;
+  text-align: right;
+  font-size: .8rem;
+  color: var(--ion-color-primary);
+}

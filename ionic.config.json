@@ -1,0 +1,7 @@
+{
+  "name": "cpe-mobile",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

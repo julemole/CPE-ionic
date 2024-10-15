@@ -1,0 +1,17 @@
+<ion-header [translucent]="true">
+  <ion-toolbar class="toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="['tracing', tracingId]"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Anexo</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <section class="ion-margin">
+    <form [formGroup]="attachedForm" class="form-container">
+      <ion-input label="Nombre" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" formControlName="name"></ion-input>
+      <ion-textarea label="Descripción" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" [autoGrow]="true" formControlName="description"></ion-textarea>
+    </form>
+  </section>
+</ion-content>

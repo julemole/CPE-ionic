@@ -1,0 +1,44 @@
+<ion-content>
+  <!-- <img src="../../../../../assets/img/logo.png" alt="Logo app" class="logo"> -->
+  <section class="ion-margin main-container">
+    <h1 class="title">¡Bienvenido!</h1>
+    <small class="help-text">Inicia sesión con tus credenciales</small>
+    <form class="form-container" [formGroup]="loginForm" (ngSubmit)="login()">
+      <div class="w-100">
+        <ion-input label="Correo electrónico" label-placement="floating" fill="outline" placeholder="Escribe tu email" type="email" formControlName="email"></ion-input>
+        @if(email.invalid && (email.touched || email.dirty)){
+          <div class="error-message">
+            @if(email.errors?.['required']){
+              <small>Campo obligatorio</small>
+            }
+            @if(email.errors?.['email']){
+              <small>El formato del correo no es válido</small>
+            }
+          </div>
+        }
+      </div>
+      <div class="w-100">
+        <ion-input class="inp-style" label="Contraseña" label-placement="floating" fill="outline" placeholder="Escribe tu contraseña" [type]="showPass ? 'text' : 'password'" formControlName="password">
+          @if(showPass){
+            <ion-icon name="eye-off-outline" class="icon" (click)="showPassword()"></ion-icon>
+          } @else {
+            <ion-icon name="eye-outline" class="icon" (click)="showPassword()"></ion-icon>
+          }
+        </ion-input>
+        @if(password.invalid && (password.touched || password.dirty)){
+          <div class="error-message">
+            @if(password.errors?.['required']){
+              <small>Campo obligatorio</small>
+            }
+            @if(password.errors?.['minLength']){
+              <small>Escribe al menos 6 caracteres</small>
+            }
+          </div>
+        }
+        <span class="forgot-pass"><a [routerLink]="['/recover-pass']">¿Olvidaste tu contraseña?</a></span>
+      </div>
+      <ion-button type="submit" expand="block">Ingresar</ion-button>
+      <!-- <span>¿Aún no tienes cuenta? <a href="/register">Registrate aquí</a></span> -->
+    </form>
+  </section>
+</ion-content>

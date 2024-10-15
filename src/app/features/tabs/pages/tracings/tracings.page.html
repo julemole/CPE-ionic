@@ -1,0 +1,86 @@
+<ion-header [translucent]="true">
+  <ion-toolbar class="toolbar">
+    <ion-title>
+      Seguimiento
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+<ion-content>
+  <section class="filters-section">
+    <form class="form-container" [formGroup]="searchForm">
+      <ion-select label="Departamento" placeholder="Selecciona una opción" label-placement="floating" fill="outline" class="select-item" formControlName="department">
+        <ion-select-option value="apple">Apple</ion-select-option>
+        <ion-select-option value="banana">Banana</ion-select-option>
+        <ion-select-option value="orange">Orange</ion-select-option>
+      </ion-select>
+      <ion-select label="Zona" placeholder="Selecciona una opción" label-placement="floating" fill="outline" class="select-item" formControlName="zone">
+        <ion-select-option value="apple">Apple</ion-select-option>
+        <ion-select-option value="banana">Banana</ion-select-option>
+        <ion-select-option value="orange">Orange</ion-select-option>
+      </ion-select>
+      <ion-select label="Municipio" placeholder="Selecciona una opción" label-placement="floating" fill="outline" class="select-item" formControlName="city">
+        <ion-select-option value="apple">Apple</ion-select-option>
+        <ion-select-option value="banana">Banana</ion-select-option>
+        <ion-select-option value="orange">Orange</ion-select-option>
+      </ion-select>
+      <ion-select label="Sede" placeholder="Selecciona una opción" label-placement="floating" fill="outline" class="select-item" formControlName="headquarters">
+        <ion-select-option value="apple">Apple</ion-select-option>
+        <ion-select-option value="banana">Banana</ion-select-option>
+        <ion-select-option value="orange">Orange</ion-select-option>
+      </ion-select>
+      <div class="buttons">
+        <ion-button type="submit" expand="block">Buscar</ion-button>
+        <ion-button expand="block" color="medium" (click)="clearFields()" [disabled]="!searchForm.dirty">Limpiar</ion-button>
+      </div>
+    </form>
+  </section>
+  <ion-grid>
+    <ion-col size="12">
+      <div class="header-container">
+        <ion-button expand="block" [routerLink]="['/tracing/add']">Registrar seguimiento</ion-button>
+      </div>
+      <ion-card>
+        <div class="table-container">
+          <table>
+            <tr>
+              @for( col of columns; track col.prop){
+                <th>{{col.name}}</th>
+              }
+            </tr>
+            @for( row of data; track row.zona; let i = $index;){
+              <tr (click)="toggleExpandRow(i)">
+                <td>
+                  <ion-icon [name]="expandedRowIndex === i ? 'chevron-down-outline' : 'chevron-forward-outline'"></ion-icon>
+                </td>
+                <td>{{row.departamento}}</td>
+                <td>{{row.zona}}</td>
+                <td>{{row.municipio}}</td>
+                <td>{{row.sede}}</td>
+              </tr>
+              @if(expandedRowIndex === i) {
+                <tr>
+                  <td colspan="5">
+                    <ion-card class="card-info">
+                      <ion-card-header>
+                        <ion-card-title>Información Adicional</ion-card-title>
+                      </ion-card-header>
+                      <ion-card-content>
+                        <p>Zona: {{ row.zona }}</p>
+                        <p>Municipio: {{ row.municipio }}</p>
+                        <p>Sede: {{ row.sede }}</p>
+                        <p>Actividad: {{ row.departamento }}</p>
+                        <ion-button fill="clear" color="primary" class="icon-card" [routerLink]="['/tracing/' + row.id]">
+                          <ion-icon name="eye-outline"></ion-icon>
+                        </ion-button>
+                      </ion-card-content>
+                    </ion-card>
+                  </td>
+                </tr>
+              }
+            }
+          </table>
+        </div>
+      </ion-card>
+    </ion-col>
+  </ion-grid>
+</ion-content>
