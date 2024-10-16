@@ -4,8 +4,8 @@
 
 export const environment = {
   production: false,
-  host: '',
-  apiUrl: ''
+  host: 'https://www.tutores.co',
+  apiUrl: 'https://www.tutores.co'
 };
 
 /*

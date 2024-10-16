@@ -32,7 +32,7 @@ export class LoginPage {
     addIcons({ eyeOutline, eyeOffOutline });
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(5)]]
     });
 
     this.email = this.loginForm.get('email') as FormControl;
@@ -45,10 +45,24 @@ export class LoginPage {
       return;
     }
 
-    const email = this.loginForm.get('email')?.value;
-    const password = this.loginForm.get('password')?.value;
-    this.authService.signIn(email, password).then((resp) => {
-    });
+    const email = this.email?.value;
+    const password = this.password?.value;
+    this.authService.signIn(email, password).subscribe({
+      next: (res) => {
+        this.setPersistenceInfo(res);
+        this.router.navigate(['/home']);
+      },
+      error: (err) => {
+        if(err.message == 'The used authentication method is not allowed on this route.') localStorage.clear();
+        console.log(err);
+      },
+    })
+  }
+
+  setPersistenceInfo(data:any){
+    const authToken = this.authService.getAuthorizationToken(this.email.value, this.password.value);
+    // this.localStorageService.setItem('authToken', authToken);
+    // this.localStorageService.setItem('current_user_roles', JSON.stringify(data?.current_user.roles));
   }
 
   showPassword() {

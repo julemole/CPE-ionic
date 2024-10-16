@@ -31,13 +31,13 @@
               <small>Campo obligatorio</small>
             }
             @if(password.errors?.['minLength']){
-              <small>Escribe al menos 6 caracteres</small>
+              <small>Escribe al menos 5 caracteres</small>
             }
           </div>
         }
         <span class="forgot-pass"><a [routerLink]="['/recover-pass']">¿Olvidaste tu contraseña?</a></span>
       </div>
-      <ion-button type="submit" expand="block">Ingresar</ion-button>
+      <ion-button type="submit" (click)="login()" expand="block">Ingresar</ion-button>
       <!-- <span>¿Aún no tienes cuenta? <a href="/register">Registrate aquí</a></span> -->
     </form>
   </section>
