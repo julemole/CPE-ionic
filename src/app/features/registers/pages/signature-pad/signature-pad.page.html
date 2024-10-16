@@ -1,0 +1,17 @@
+<ion-header [translucent]="true">
+  <ion-toolbar class="toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title>Firma de registro</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="container-cv">
+    <canvas #canvas class="canvas-style"></canvas>
+  </div>
+  <ion-button (click)="clearSignature()">Borrar Firma</ion-button>
+  <ion-button (click)="saveSignature()">Guardar Firma</ion-button>
+  <img [src]="file" alt="">
+</ion-content>

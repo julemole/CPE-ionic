@@ -4,8 +4,8 @@ import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } 
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonGrid, IonCol, IonRow, IonTextarea, IonThumbnail, IonInput, IonButton } from '@ionic/angular/standalone';
 import { ActivatedRoute, RouterLinkWithHref } from '@angular/router';
 import { CameraService } from 'src/app/core/services/camera.service';
-import { SaveInSessionService } from '../../services/save-in-session.service';
-import { PhotoData } from '../../models/save-in-session.interface';
+import { PhotoData } from 'src/app/features/tabs/models/save-in-session.interface';
+import { SaveInSessionService } from 'src/app/features/tabs/services/save-in-session.service';
 
 @Component({
   selector: 'app-add-photo',

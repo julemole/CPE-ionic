@@ -26,27 +26,27 @@
 
     </ion-select>
   </section>
+  <ion-tabs>
+    <ion-tab-bar slot="bottom" color="primary">
+      <ion-tab-button [routerLink]="['/registers/add/select-institution', idInstitution, 'add-photo']">
+        <ion-icon aria-hidden="true" name="camera"></ion-icon>
+        <ion-label class="i-label">Agregar evidencia</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button [routerLink]="['/registers/add/select-institution', idInstitution, 'add-attached']">
+        <ion-icon aria-hidden="true" name="document-attach"></ion-icon>
+        <ion-label class="i-label">Agregar anexo</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button [routerLink]="['/registers/add/select-institution', idInstitution, 'signature']">
+        <ion-icon aria-hidden="true" name="pencil"></ion-icon>
+        <ion-label class="i-label">Firmar registro</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="settings" [routerLink]="['/settings']">
+        <ion-icon aria-hidden="true" name="save"></ion-icon>
+        <ion-label class="i-label">Guardar registro</ion-label>
+      </ion-tab-button>
+    </ion-tab-bar>
+  </ion-tabs>
 </ion-content>
-<ion-tabs>
-  <ion-tab-bar slot="bottom" color="primary">
-    <ion-tab-button tab="home" [routerLink]="['/home']">
-      <ion-icon aria-hidden="true" name="camera"></ion-icon>
-      <ion-label class="i-label">Agregar evidencia</ion-label>
-    </ion-tab-button>
-
-    <ion-tab-button tab="tracing" [routerLink]="['/tracing']">
-      <ion-icon aria-hidden="true" name="document-attach"></ion-icon>
-      <ion-label class="i-label">Agregar anexo</ion-label>
-    </ion-tab-button>
-
-    <ion-tab-button tab="reports" [routerLink]="['/reports']">
-      <ion-icon aria-hidden="true" name="pencil"></ion-icon>
-      <ion-label class="i-label">Firmar registro</ion-label>
-    </ion-tab-button>
-
-    <ion-tab-button tab="settings" [routerLink]="['/settings']">
-      <ion-icon aria-hidden="true" name="save"></ion-icon>
-      <ion-label class="i-label">Guardar registro</ion-label>
-    </ion-tab-button>
-  </ion-tab-bar>
-</ion-tabs>

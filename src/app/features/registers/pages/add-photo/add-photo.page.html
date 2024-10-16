@@ -1,7 +1,7 @@
 <ion-header [translucent]="true">
   <ion-toolbar class="toolbar">
     <ion-buttons slot="start">
-      <ion-back-button [defaultHref]="['tracing/add']"></ion-back-button>
+      <ion-back-button></ion-back-button>
     </ion-buttons>
     <ion-title>Evidencia fotográfica</ion-title>
   </ion-toolbar>
@@ -50,7 +50,7 @@
       <ion-input label="Latitud" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" formControlName="latitude"></ion-input>
       <ion-input label="Longitud" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" formControlName="longitude"></ion-input>
       <div class="btn-container">
-        <ion-button type="submit" expand="block" [disabled]="!photoForm.valid || !imageSrc" color="success">Guardar</ion-button>
+        <ion-button type="submit" expand="block" [disabled]="!photoForm.valid || !imageSrc" color="success">Guardar evidencia</ion-button>
       </div>
     </form>
   </section>

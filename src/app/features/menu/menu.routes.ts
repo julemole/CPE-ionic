@@ -12,6 +12,10 @@ export const menuRoutes: Routes = [
     loadComponent: () => import('./pages/profile/profile.page').then((m) => m.ProfilePage),
   },
   {
+    path: 'settings',
+    loadComponent: () => import('./pages/settings/settings.page').then((m) => m.SettingsPage),
+  },
+  {
     path: 'registers',
     children: [
       { path: 'me', loadComponent: () => import('./pages/my-registers/my-registers.page').then((m) => m.MyRegistersPage) },
