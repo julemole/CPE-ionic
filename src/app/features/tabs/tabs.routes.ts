@@ -8,7 +8,7 @@ export const routes: Routes = [
     children: [
       {
         path: 'home',
-        loadComponent: () => import('./pages/home/home.page').then((m) => m.HomePage),
+        loadComponent: () => import('../menu/pages/home/home.page').then((m) => m.HomePage),
       },
       {
         path: 'tracing',
@@ -28,6 +28,10 @@ export const routes: Routes = [
       },
       {
         path: 'tracing/photo-evidence/add',
+        loadComponent: () => import('./pages/add-photo/add-photo.page').then((m) => m.AddPhotoPage),
+      },
+      {
+        path: 'tracing/photo-evidence/:photoId',
         loadComponent: () => import('./pages/add-photo/add-photo.page').then((m) => m.AddPhotoPage),
       },
       {

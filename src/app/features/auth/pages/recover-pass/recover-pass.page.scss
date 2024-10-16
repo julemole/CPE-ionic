@@ -1,0 +1,56 @@
+
+ion-content::part(scroll) {
+  padding: 0;
+}
+
+.main-container {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.h-45 {
+  height: 45%;
+}
+
+.recover-ct {
+  height: 60%;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0 1rem;
+}
+
+.icon-login-ct {
+  display: flex;
+  justify-content: center;
+}
+
+.icon-login {
+  font-size: 6rem;
+  border: 3px solid #000;
+  border-radius: 50%;
+  padding: 1rem;
+}
+
+.logo {
+  width: 100%;
+  max-width: 150px;
+  margin: 0 auto;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 1.5rem 0 0 0;
+}
+
+.back-btn {
+  margin: 1rem 0;
+}

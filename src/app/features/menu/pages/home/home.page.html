@@ -1,0 +1,42 @@
+<ion-content [fullscreen]="true">
+  <section class="main-container">
+    <app-banner-gov class="h-45"/>
+    <article class="menu-container">
+      <ion-grid>
+        <!-- Fila superior: Mi perfil -->
+        <ion-row>
+          <ion-col size="6" class="ion-text-center">
+            <ion-button fill="clear" [routerLink]="['/profile']">
+              <ion-icon name="person-circle-outline" class="icon-menu"></ion-icon>
+            </ion-button>
+            <p>Mi perfil</p>
+          </ion-col>
+          <ion-col size="6" class="ion-text-center">
+            <ion-button fill="clear" [routerLink]="['/perfil']">
+              <ion-icon name="settings-outline" class="icon-menu"></ion-icon>
+            </ion-button>
+            <p>Ajustes</p>
+          </ion-col>
+        </ion-row>
+
+        <!-- Fila inferior: Mis registros y Nuevo registro -->
+        <ion-row>
+          <ion-col size="6" class="ion-text-center">
+            <ion-button fill="clear" [routerLink]="['/registers/me']">
+              <ion-icon name="document-text-outline" class="icon-menu"></ion-icon>
+            </ion-button>
+            <p>Mis registros</p>
+          </ion-col>
+
+          <ion-col size="6" class="ion-text-center">
+            <ion-button fill="clear" [routerLink]="['/registers/add']">
+              <ion-icon name="document-text-outline" class="icon-menu"></ion-icon>
+              <ion-icon name="add-circle" size="small"></ion-icon>
+            </ion-button>
+            <p>Nuevo registro</p>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </article>
+  </section>
+</ion-content>

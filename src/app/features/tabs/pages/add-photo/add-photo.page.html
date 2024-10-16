@@ -3,28 +3,55 @@
     <ion-buttons slot="start">
       <ion-back-button [defaultHref]="['tracing/add']"></ion-back-button>
     </ion-buttons>
-    <ion-title>Registro evidencia fotográfica</ion-title>
+    <ion-title>Evidencia fotográfica</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <section class="ion-margin">
     <div class="container-img">
-      <ion-thumbnail slot="start" class="img">
-        <img alt="ejemplo" [src]="'../../../../../assets/img/logo.png'" />
-      </ion-thumbnail>
-      <div class="container-btns">
-        <ion-button expand="block">Cargar foto</ion-button>
-        <ion-button expand="block">Tomar foto</ion-button>
+      @if(imageSrc) {
+        <ion-thumbnail slot="start" class="img">
+          <img alt="ejemplo" [src]="imageSrc" />
+        </ion-thumbnail>
+      }
+      <div class="container-btns" [class.flex-column]="imageSrc">
+        <div class="file-button">
+          <ion-button expand="block">Cargar foto</ion-button>
+          <input title="Cargar foto" type="file" class="file-input" (change)="onFileSelected($event)" accept=".jpg, .jpeg, .png, .svg" />
+        </div>
+        <ion-button expand="block" (click)="captureImage()">Tomar foto</ion-button>
       </div>
     </div>
-    <form [formGroup]="photoForm" class="form-container">
-      <ion-input label="Nombre" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" formControlName="name"></ion-input>
-      <ion-textarea label="Descripción" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" [autoGrow]="true" formControlName="description"></ion-textarea>
+    <form [formGroup]="photoForm" class="form-container" (ngSubmit)="savePhoto()">
+      <div class="w-100 ion-margin-bottom">
+        <ion-input label="Nombre" placeholder="Escribe un nombre" label-placement="floating" fill="outline" type="text" formControlName="name"></ion-input>
+        @if(name.invalid && (name.touched || name.dirty)){
+          <div class="error-message">
+            @if(name.errors?.['required']){
+              <small>Campo obligatorio</small>
+            }
+            @if(name.errors?.['maxlength']){
+              <small>El nombre no puede tener más de 150 caracteres</small>
+            }
+          </div>
+        }
+      </div>
+      <div class="w-100 ion-margin-bottom">
+        <ion-textarea rows="3" placeholder="Escribe aquí" label="Descripción" label-placement="floating" fill="outline" type="text" [autoGrow]="true" formControlName="description"></ion-textarea>
+        @if((description.touched || description.dirty) && description.errors?.['maxlength']){
+        <div class="error-message">
+            <small>La descripción no puede tener más de 250 caracteres</small>
+          </div>
+        }
+      </div>
       <ion-input label="Fecha" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" formControlName="date"></ion-input>
       <ion-input label="Hora" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" formControlName="time"></ion-input>
       <ion-input label="Latitud" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" formControlName="latitude"></ion-input>
       <ion-input label="Longitud" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" formControlName="longitude"></ion-input>
+      <div class="btn-container">
+        <ion-button type="submit" expand="block" [disabled]="!photoForm.valid || !imageSrc" color="success">Guardar</ion-button>
+      </div>
     </form>
   </section>
 </ion-content>

@@ -1,0 +1,28 @@
+.main-container {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.h-45 {
+  height: 45%;
+}
+
+.menu-container {
+  display: flex;
+  align-items: center;
+  height: 60%;
+  margin: 0 1rem;
+}
+
+.icon-menu {
+  font-size: 7rem;
+  color: #000;
+}
+
+p {
+  font-size: small;
+  font-weight: bold;
+  margin: 0;
+}

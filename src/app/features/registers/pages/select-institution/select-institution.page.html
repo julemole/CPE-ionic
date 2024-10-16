@@ -1,0 +1,44 @@
+<ion-header [translucent]="true">
+  <ion-toolbar class="toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      Nuevo registro
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header>
+    <ion-toolbar class="second-toolbar">
+      <ion-title class="title">Seleccionar institución educativa</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>hola</ion-card-title>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-accordion-group>
+        @for (zona of tutor.zonas; track zona.id){
+          <ion-accordion>
+            <ion-item slot="header">
+              <ion-label>
+                <strong>{{zona.nombre}}</strong>
+              </ion-label>
+            </ion-item>
+            <ion-list slot="content">
+              <ion-item>
+                @for(institucion of zona.instituciones; track institucion.id){
+                  <ion-label>{{institucion.nombre}}</ion-label>
+                }
+              </ion-item>
+            </ion-list>
+          </ion-accordion>
+        }
+      </ion-accordion-group>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

@@ -1,0 +1,23 @@
+.icon-container {
+  display: flex;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 6rem;
+  }
+}
+
+ion-item {
+  --padding-start: 0px;
+  --inner-padding-start: 0px;
+}
+
+ion-card {
+  max-height: 85%;
+  overflow-y: auto;
+}
+
+.btn-ct {
+  display: flex;
+  justify-content: center;
+}

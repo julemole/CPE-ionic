@@ -33,10 +33,7 @@
             ],
             "styles": [
               "src/global.scss",
-              "src/theme/variables.scss",
-              "./node_modules/@swimlane/ngx-datatable/index.scss",
-              "./node_modules/@swimlane/ngx-datatable/themes/material.scss",
-              "./node_modules/@swimlane/ngx-datatable/assets/icons.css"
+              "src/theme/variables.scss"
             ],
             "scripts": []
           },
@@ -114,10 +111,7 @@
             ],
             "styles": [
               "src/global.scss",
-              "src/theme/variables.scss",
-              "./node_modules/@swimlane/ngx-datatable/index.scss",
-              "./node_modules/@swimlane/ngx-datatable/themes/material.scss",
-              "./node_modules/@swimlane/ngx-datatable/assets/icons.css"
+              "src/theme/variables.scss"
             ],
             "scripts": []
           },

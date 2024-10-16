@@ -1,13 +1,17 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>add-attached</ion-title>
+  <ion-toolbar class="toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="['tracing/add']"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Cargar anexo</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">add-attached</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <section class="ion-margin">
+    <form [formGroup]="attachedForm" class="form-container">
+      <ion-input label="Nombre" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" formControlName="name"></ion-input>
+      <ion-textarea label="Descripción" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" [autoGrow]="true" formControlName="description"></ion-textarea>
+    </form>
+  </section>
 </ion-content>

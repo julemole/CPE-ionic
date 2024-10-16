@@ -13,6 +13,10 @@ export const authRoutes: Routes = [
   {
     path: 'recover-pass',
     loadComponent: () => import('./pages/recover-pass/recover-pass.page').then((c) => c.RecoverPassPage),
+  },
+  {
+    path: 'reset-pass',
+    loadComponent: () => import('./pages/reset-pass/reset-pass.page').then((c) => c.ResetPassPage),
   }
 
 ];

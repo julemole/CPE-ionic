@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  host: '',
-  apiUrl: ''
+  host: 'https://www.tutores.co',
+  apiUrl: 'https://www.tutores.co'
 };
