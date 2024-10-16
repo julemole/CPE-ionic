@@ -2,13 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonItem, IonCardHeader, IonCard, IonCardContent, IonCardTitle, IonAccordion, IonAccordionGroup, IonList, IonLabel } from '@ionic/angular/standalone';
+import { RouterLinkWithHref } from '@angular/router';
 
 @Component({
   selector: 'app-select-institution',
   templateUrl: './select-institution.page.html',
   styleUrls: ['./select-institution.page.scss'],
   standalone: true,
-  imports: [IonList, IonLabel, IonCard, IonCardContent, IonCardTitle, IonCardHeader, IonAccordion, IonAccordionGroup, IonItem, IonButtons, IonBackButton, IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule]
+  imports: [IonList, IonLabel, IonCard, IonCardContent, IonCardTitle, IonCardHeader, IonAccordion, IonAccordionGroup, IonItem, IonButtons, IonBackButton, IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule, RouterLinkWithHref]
 })
 export class SelectInstitutionPage {
 

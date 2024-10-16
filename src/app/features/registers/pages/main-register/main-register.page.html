@@ -1,0 +1,52 @@
+<ion-header [translucent]="true">
+  <ion-toolbar class="toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      Nuevo registro
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header>
+    <ion-toolbar class="second-toolbar">
+      <ion-title class="title">Seleccionar institución educativa</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <section class="ion-padding">
+    <ion-select label="Enfoque" label-placement="floating" fill="outline" class="ion-margin-bottom" placeholder="Seleccione una opción">
+
+    </ion-select>
+    <ion-select label="Actividad" label-placement="floating" fill="outline" class="ion-margin-bottom" placeholder="Seleccione una opción">
+
+    </ion-select>
+    <ion-select label="Subactividad" label-placement="floating" fill="outline" class="ion-margin-bottom" placeholder="Seleccione una opción">
+
+    </ion-select>
+  </section>
+</ion-content>
+<ion-tabs>
+  <ion-tab-bar slot="bottom" color="primary">
+    <ion-tab-button tab="home" [routerLink]="['/home']">
+      <ion-icon aria-hidden="true" name="camera"></ion-icon>
+      <ion-label class="i-label">Agregar evidencia</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="tracing" [routerLink]="['/tracing']">
+      <ion-icon aria-hidden="true" name="document-attach"></ion-icon>
+      <ion-label class="i-label">Agregar anexo</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="reports" [routerLink]="['/reports']">
+      <ion-icon aria-hidden="true" name="pencil"></ion-icon>
+      <ion-label class="i-label">Firmar registro</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="settings" [routerLink]="['/settings']">
+      <ion-icon aria-hidden="true" name="save"></ion-icon>
+      <ion-label class="i-label">Guardar registro</ion-label>
+    </ion-tab-button>
+  </ion-tab-bar>
+</ion-tabs>
