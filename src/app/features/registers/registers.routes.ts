@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { TabsPage } from '../tabs/tabs.page';
 
 export const registerRoutes: Routes = [
   {
@@ -12,6 +13,12 @@ export const registerRoutes: Routes = [
   },
   {
     path: 'select-institution/:idInstitution',
-    loadComponent: () => import('./pages/main-register/main-register.page').then((m) => m.MainRegisterPage)
+    component: TabsPage,
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./pages/main-register/main-register.page').then((m) => m.MainRegisterPage)
+      }
+    ]
   }
 ];

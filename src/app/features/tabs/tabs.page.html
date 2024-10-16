@@ -1,23 +1,23 @@
 <ion-tabs>
-  <ion-tab-bar slot="bottom">
+  <ion-tab-bar slot="bottom" color="primary">
     <ion-tab-button tab="home" [routerLink]="['/home']">
-      <ion-icon aria-hidden="true" name="home"></ion-icon>
-      <ion-label>Inicio</ion-label>
+      <ion-icon aria-hidden="true" name="camera"></ion-icon>
+      <ion-label class="i-label">Agregar evidencia</ion-label>
     </ion-tab-button>
 
     <ion-tab-button tab="tracing" [routerLink]="['/tracing']">
-      <ion-icon aria-hidden="true" name="navigate-circle"></ion-icon>
-      <ion-label>Seguimiento</ion-label>
+      <ion-icon aria-hidden="true" name="document-attach"></ion-icon>
+      <ion-label class="i-label">Agregar anexo</ion-label>
     </ion-tab-button>
 
     <ion-tab-button tab="reports" [routerLink]="['/reports']">
-      <ion-icon aria-hidden="true" name="bar-chart"></ion-icon>
-      <ion-label>Reportes</ion-label>
+      <ion-icon aria-hidden="true" name="pencil"></ion-icon>
+      <ion-label class="i-label">Firmar registro</ion-label>
     </ion-tab-button>
 
     <ion-tab-button tab="settings" [routerLink]="['/settings']">
-      <ion-icon aria-hidden="true" name="settings"></ion-icon>
-      <ion-label>Ajustes</ion-label>
+      <ion-icon aria-hidden="true" name="save"></ion-icon>
+      <ion-label class="i-label">Guardar registro</ion-label>
     </ion-tab-button>
   </ion-tab-bar>
 </ion-tabs>

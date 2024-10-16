@@ -15,38 +15,73 @@
       <ion-title class="title">Seleccionar institución educativa</ion-title>
     </ion-toolbar>
   </ion-header>
-  <section class="ion-padding">
-    <ion-select label="Enfoque" label-placement="floating" fill="outline" class="ion-margin-bottom" placeholder="Seleccione una opción">
+  <form [formGroup]="registerForm" class="form-container" (ngSubmit)="saveRegister()">
+    <section class="ion-padding">
+      <ion-select label="Enfoque" formControlName="approach" label-placement="floating" fill="outline" class="ion-margin-bottom" placeholder="Seleccione una opción">
 
-    </ion-select>
-    <ion-select label="Actividad" label-placement="floating" fill="outline" class="ion-margin-bottom" placeholder="Seleccione una opción">
+      </ion-select>
+      <ion-select label="Actividad" formControlName="activity" label-placement="floating" fill="outline" class="ion-margin-bottom" placeholder="Seleccione una opción">
 
-    </ion-select>
-    <ion-select label="Subactividad" label-placement="floating" fill="outline" class="ion-margin-bottom" placeholder="Seleccione una opción">
+      </ion-select>
+      <ion-select label="Subactividad" formControlName="subactivity" label-placement="floating" fill="outline" class="ion-margin-bottom" placeholder="Seleccione una opción">
 
-    </ion-select>
-  </section>
+      </ion-select>
+    </section>
+  </form>
+
+  <ion-list>
+    <ion-item lines="none">
+      <ion-label>Evidencia Fotográfica</ion-label>
+    </ion-item>
+    <ion-item *ngFor="let evidence of evidences">
+      <ion-icon name="camera-outline" slot="start" color="dark"></ion-icon>
+      <ion-label>{{ evidence.name }}</ion-label>
+    </ion-item>
+    <ion-item>
+      <ion-button expand="block" fill="clear" (click)="addEvidence()">
+        <ion-icon name="camera-outline" slot="start" color="dark"></ion-icon>
+        Agregar evidencia
+      </ion-button>
+    </ion-item>
+  </ion-list>
+
+  <ion-list>
+    <ion-item lines="none">
+      <ion-label>Anexos</ion-label>
+    </ion-item>
+    <ion-item *ngFor="let anexo of anexos">
+      <ion-icon name="document-attach-outline" slot="start" color="dark"></ion-icon>
+      <ion-label>{{ anexo.name }}</ion-label>
+    </ion-item>
+    <ion-item>
+      <ion-button expand="block" fill="clear" (click)="addAnexo()">
+        <ion-icon name="document-attach-outline" slot="start" color="dark"></ion-icon>
+        Agregar anexo
+      </ion-button>
+    </ion-item>
+  </ion-list>
+  <!-- <ion-tabs>
+    <ion-tab-bar slot="bottom" color="primary">
+      <ion-tab-button tab="home" [routerLink]="['/home']">
+        <ion-icon aria-hidden="true" name="camera"></ion-icon>
+        <ion-label class="i-label">Agregar evidencia</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="tracing" [routerLink]="['/tracing']">
+        <ion-icon aria-hidden="true" name="document-attach"></ion-icon>
+        <ion-label class="i-label">Agregar anexo</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="reports" [routerLink]="['/reports']">
+        <ion-icon aria-hidden="true" name="pencil"></ion-icon>
+        <ion-label class="i-label">Firmar registro</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="settings" [routerLink]="['/settings']">
+        <ion-icon aria-hidden="true" name="save"></ion-icon>
+        <ion-label class="i-label">Guardar registro</ion-label>
+      </ion-tab-button>
+    </ion-tab-bar>
+  </ion-tabs> -->
 </ion-content>
-<ion-tabs>
-  <ion-tab-bar slot="bottom" color="primary">
-    <ion-tab-button tab="home" [routerLink]="['/home']">
-      <ion-icon aria-hidden="true" name="camera"></ion-icon>
-      <ion-label class="i-label">Agregar evidencia</ion-label>
-    </ion-tab-button>
 
-    <ion-tab-button tab="tracing" [routerLink]="['/tracing']">
-      <ion-icon aria-hidden="true" name="document-attach"></ion-icon>
-      <ion-label class="i-label">Agregar anexo</ion-label>
-    </ion-tab-button>
-
-    <ion-tab-button tab="reports" [routerLink]="['/reports']">
-      <ion-icon aria-hidden="true" name="pencil"></ion-icon>
-      <ion-label class="i-label">Firmar registro</ion-label>
-    </ion-tab-button>
-
-    <ion-tab-button tab="settings" [routerLink]="['/settings']">
-      <ion-icon aria-hidden="true" name="save"></ion-icon>
-      <ion-label class="i-label">Guardar registro</ion-label>
-    </ion-tab-button>
-  </ion-tab-bar>
-</ion-tabs>
