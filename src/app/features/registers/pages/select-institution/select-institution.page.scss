@@ -7,6 +7,10 @@
   --min-height: 2.5rem;
 }
 
+.container-item {
+  padding-left: 1.5rem;
+}
+
 //estilos acordeon
 ion-card-title {
   text-align: center;
@@ -16,11 +20,10 @@ ion-card-title {
 }
 
 ion-accordion ion-item {
-  --inner-padding-start: 10px; /* Reduce el padding de los items */
+  --inner-padding-start: 0px; /* Reduce el padding de los items */
 }
 
 ion-accordion ion-item[slot="header"] {
-  background-color: #f8f9fa; /* Fondo del header del acordeón */
   font-weight: bold;
 }
 
@@ -28,4 +31,9 @@ ion-accordion-group {
   border: 1px solid #ccc;
   border-radius: 10px;
   overflow: hidden;
+}
+
+.label {
+  color: var(--ion-color-primary);
+  font-size: 14px;
 }

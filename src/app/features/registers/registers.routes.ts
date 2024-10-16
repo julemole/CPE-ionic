@@ -8,6 +8,10 @@ export const registerRoutes: Routes = [
   },
   {
     path: 'select-institution',
-    loadComponent: () => import('./pages/select-institution/select-institution.page').then((m) => m.SelectInstitutionPage)
+    loadComponent: () => import('./pages/select-institution/select-institution.page').then((m) => m.SelectInstitutionPage),
+  },
+  {
+    path: 'select-institution/:idInstitution',
+    loadComponent: () => import('./pages/main-register/main-register.page').then((m) => m.MainRegisterPage)
   }
 ];

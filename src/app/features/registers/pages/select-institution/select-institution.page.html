@@ -30,11 +30,11 @@
               </ion-label>
             </ion-item>
             <ion-list slot="content">
-              <ion-item>
-                @for(institucion of zona.instituciones; track institucion.id){
-                  <ion-label>{{institucion.nombre}}</ion-label>
-                }
+              @for(institucion of zona.instituciones; track institucion.id){
+              <ion-item class="container-item">
+                <ion-label [routerLink]="[institucion.id]" class="label">{{institucion.nombre}}</ion-label>
               </ion-item>
+              }
             </ion-list>
           </ion-accordion>
         }
