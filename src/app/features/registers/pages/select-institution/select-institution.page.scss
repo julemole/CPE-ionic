@@ -1,0 +1,31 @@
+.title {
+  font-size: 1rem;
+  text-align: center;
+}
+
+.second-toolbar {
+  --min-height: 2.5rem;
+}
+
+//estilos acordeon
+ion-card-title {
+  text-align: center;
+  text-transform: capitalize;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+ion-accordion ion-item {
+  --inner-padding-start: 10px; /* Reduce el padding de los items */
+}
+
+ion-accordion ion-item[slot="header"] {
+  background-color: #f8f9fa; /* Fondo del header del acordeón */
+  font-weight: bold;
+}
+
+ion-accordion-group {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  overflow: hidden;
+}

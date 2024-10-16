@@ -1,10 +1,12 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonInput, IonSelect, IonSelectOption, IonGrid, IonCol, IonRow, IonLabel, IonItem, IonCard, IonButton, IonIcon, IonTextarea } from '@ionic/angular/standalone';
 import { ActivatedRoute, RouterLinkWithHref } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { eyeOutline } from 'ionicons/icons';
+import { createOutline, eyeOutline, trashOutline } from 'ionicons/icons';
+import { PhotoData } from '../../models/save-in-session.interface';
+import { SaveInSessionService } from '../../services/save-in-session.service';
 
 @Component({
   selector: 'app-add-tracing',
@@ -27,8 +29,8 @@ export class AddTracingPage implements OnInit {
     approach: ['', Validators.required],
     subactivity: ['', Validators.required],
   });
-  description: string = '';
-  news: string = '';
+  description: FormControl = new FormControl('', Validators.maxLength(250));
+  news: FormControl = new FormControl('', Validators.maxLength(250));
 
   photos: any[] = [
     { id: '1', name: 'Photo 1', date: '2021-09-01', url: 'https://via.placeholder.com/150' },
@@ -36,14 +38,17 @@ export class AddTracingPage implements OnInit {
     { id: '3', name: 'Photo 3', date: '2021-09-03', url: 'https://via.placeholder.com/150' }
   ];
 
-  constructor(private aRoute: ActivatedRoute) {
-    addIcons({eyeOutline});
+  photoData: WritableSignal<PhotoData[]> = signal<PhotoData[]>([]);
+
+  constructor(private aRoute: ActivatedRoute, private saveInSessionService: SaveInSessionService) {
+    addIcons({eyeOutline, createOutline, trashOutline});
+    this.photoData = this.saveInSessionService.getPhotoData();
   }
 
   ngOnInit() {
     this.detailForm.get('region')?.disable();
     this.detailForm.get('department')?.disable();
-    console.log('holaa')
+    console.log(this.photoData)
   }
 
 }

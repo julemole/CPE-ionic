@@ -1,0 +1,28 @@
+.banner {
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  position: relative;
+  background-color: #0049af;
+  height: 100%;
+}
+
+.img-cpe{
+  height: 80%;
+  width: 80%;
+}
+
+.img-gov {
+  position: absolute;
+  right: 30%;
+  top: 10%;
+  width: 40%;
+}
+
+.title-banner {
+  text-align: center;
+  position: absolute;
+  bottom: 5%;
+  width: 60%;
+  color: #FFF;
+}

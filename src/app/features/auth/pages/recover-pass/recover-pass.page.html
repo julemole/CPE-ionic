@@ -1,13 +1,25 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>recover-pass</ion-title>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">recover-pass</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content>
+  <section class="main-container">
+    <app-banner-gov class="h-45"/>
+    <article class="recover-ct">
+      <ion-buttons slot="start" class="back-btn">
+        <ion-back-button text="Inicio de sesión" defaultHref="/login"></ion-back-button>
+      </ion-buttons>
+      <div class="form-section">
+        <div class="icon-login-ct">
+          <ion-icon name="key-outline" class="icon-login"></ion-icon>
+        </div>
+        <small class="ion-text-center ion-margin-top">Ingresa el correo electrónico asociado a tu cuenta y sigue las instrucciones.</small>
+        <form class="form-container">
+          <div class="w-100">
+            <ion-input label="Correo electrónico" label-placement="floating" fill="outline" type="text" [formControl]="email"
+              helperText="Escribe tu correo electrónico"
+              errorText="El formato del correo no es válido"
+            ></ion-input>
+          </div>
+          <ion-button id="code-alert" expand="block" (click)="sendEmail()" [disabled]="email.value && email.invalid">Enviar</ion-button>
+        </form>
+      </div>
+    </article>
+  </section>
 </ion-content>

@@ -16,10 +16,34 @@
 
 .container-btns {
   display: flex;
+  width: 100%;
   justify-content: center;
   gap: 1rem;
 }
 
 .flex-column {
   flex-direction: column;
+  width: auto;
+}
+
+.file-input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  top: 0;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.file-button {
+  position: relative;
+  display: inline-block;
+  width: auto;
+}
+
+.btn-container {
+  display: flex;
+  justify-content: end;
+  margin-top: 1rem;
 }

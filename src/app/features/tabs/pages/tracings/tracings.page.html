@@ -43,19 +43,21 @@
         <div class="table-container">
           <table>
             <tr>
-              @for( col of columns; track col.prop){
-                <th>{{col.name}}</th>
-              }
+              <th></th>
+              <th>Departamento</th>
+              <th>Zona</th>
+              <th>Municipio</th>
+              <th>Sede</th>
             </tr>
             @for( row of data; track row.zona; let i = $index;){
               <tr (click)="toggleExpandRow(i)">
                 <td>
                   <ion-icon [name]="expandedRowIndex === i ? 'chevron-down-outline' : 'chevron-forward-outline'"></ion-icon>
                 </td>
-                <td>{{row.departamento}}</td>
-                <td>{{row.zona}}</td>
-                <td>{{row.municipio}}</td>
-                <td>{{row.sede}}</td>
+                <td [attr.data-tooltip]="row.departamento">{{row.departamento}}</td>
+                <td [attr.data-tooltip]="row.zona">{{row.zona}}</td>
+                <td [attr.data-tooltip]="row.municipio">{{row.municipio}}</td>
+                <td [attr.data-tooltip]="row.sede">{{row.sede}}</td>
               </tr>
               @if(expandedRowIndex === i) {
                 <tr>
@@ -79,6 +81,11 @@
               }
             }
           </table>
+
+          <ion-infinite-scroll threshold="100px" (ionInfinite)="loadMoreData($event)">
+            <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Cargando más datos...">
+            </ion-infinite-scroll-content>
+          </ion-infinite-scroll>
         </div>
       </ion-card>
     </ion-col>

@@ -5,13 +5,16 @@ import { SQLiteConnection, CapacitorSQLite } from '@capacitor-community/sqlite';
 
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { authInterceptor } from './app/shared/interceptors/auth.interceptor';
 
 bootstrapApplication(AppComponent, {
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideIonicAngular(),
-    provideHttpClient(),
+    provideHttpClient(
+      withInterceptors([authInterceptor])
+    ),
     provideRouter(routes, withPreloading(PreloadAllModules)),
     { provide: SQLiteConnection, useFactory: () => new SQLiteConnection(CapacitorSQLite) },
   ],

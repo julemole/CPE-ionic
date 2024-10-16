@@ -45,48 +45,57 @@
       <h4>Evidencia fotográfica</h4>
       <ion-button expand="block" [routerLink]="['/tracing/photo-evidence/add']">Agregar</ion-button>
     </div>
-    <ion-grid>
-      <ion-col>
-        <ion-card>
-          <table>
-            <tr>
-              <th>Nombre</th>
-              <th>Fecha</th>
-              <th>Ver detalle</th>
-            </tr>
-            @for (item of photos; track item.name){
+    @if(photoData().length){
+      <ion-grid>
+        <ion-col>
+          <ion-card>
+            <table class="act-table">
               <tr>
-                <td>{{item.name}}</td>
-                <td>{{item.date}}</td>
-                <td>
-                  <ion-button fill="clear" color="primary"  [routerLink]="['/tracing', 'photo-evidence', item.id]">
-                  <!-- <ion-button fill="clear" color="primary"  [routerLink]="['/tracing', currentId, 'photo-evidence', item.id]"> -->
-                    <ion-icon slot="icon-only" name="eye-outline"></ion-icon>
-                  </ion-button>
-                </td>
+                <th class="no-expand">Nombre</th>
+                <th>Fecha</th>
+                <th>Ver detalle</th>
               </tr>
-            }
-          </table>
-        </ion-card>
-      </ion-col>
-    </ion-grid>
-    <ion-textarea label="Descripción" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" [autoGrow]="true" [(ngModel)]="description" disabled></ion-textarea>
-    <ion-textarea label="Novedades" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" [autoGrow]="true" [(ngModel)]="news" disabled></ion-textarea>
+              @for (item of photoData(); track item.id){
+                <tr>
+                  <td class="no-expand">{{item.name}}</td>
+                  <td>{{item.date}}</td>
+                  <td>
+                    <div class="actions-btns">
+                      <ion-button fill="clear" color="primary"  [routerLink]="['/tracing/photo-evidence', item.id]">
+                        <ion-icon slot="icon-only" name="eye-outline"></ion-icon>
+                      </ion-button>
+                      <ion-button fill="clear" color="primary"  [routerLink]="['/tracing/photo-evidence', item.id]">
+                        <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+                      </ion-button>
+                      <ion-button fill="clear" color="primary">
+                        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                      </ion-button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </table>
+          </ion-card>
+        </ion-col>
+      </ion-grid>
+    }
+    <ion-textarea rows="3" label="Descripción" placeholder="Escribe aquí" label-placement="floating" fill="outline" type="text" class="ion-margin-vertical" [autoGrow]="true" [formControl]="description"></ion-textarea>
+    <ion-textarea rows="3" label="Novedades" placeholder="Escribe aquí" label-placement="floating" fill="outline" type="text" class="ion-margin-bottom" [autoGrow]="true" [formControl]="news"></ion-textarea>
     <div class="subtitle-btn">
       <h4>Anexos</h4>
-      <ion-button expand="block">Agregar</ion-button>
+      <ion-button expand="block" [routerLink]="['/tracing/attached/add']">Agregar</ion-button>
     </div>
     <ion-grid>
       <ion-col>
         <ion-card>
           <table>
             <tr>
-              <th>Nombre</th>
+              <th class="no-expand">Nombre</th>
               <th>Ver detalle</th>
             </tr>
             @for (item of photos; track item.name){
               <tr>
-                <td>{{item.name}}</td>
+                <td class="no-expand">{{item.name}}</td>
                 <td>
                   <ion-button fill="clear" color="primary" [routerLink]="['/tracing', 'attached', item.id]">
                   <!-- <ion-button fill="clear" color="primary" [routerLink]="['/tracing', currentId, 'attached', item.id]"> -->

@@ -34,7 +34,7 @@
 
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';
+@import '@ionic/angular/css/palettes/high-contrast.system.css';
 
 //styles
 .error-message {
@@ -46,24 +46,34 @@
   width: 100%;
 }
 
+.h-100 {
+  height: 100%;
+}
+
 .toolbar {
   --background: var(--ion-color-primary);
+  color: #FFF;
 }
 
 //Estilos tabla
 
-.table-container {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
 table {
   width: 100%;
-  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table-container {
+  height: auto;
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 th, td {
-  padding: 8px 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  position: relative;
+  padding: 6px 10px;
   border-bottom: 1px solid #ccc;
   text-align: left;
 }
@@ -71,4 +81,53 @@ th, td {
 th {
   background-color: #333;
   color: #FFF;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.registers-table th:first-child, td:first-child {
+  width: 30%;
+}
+
+// .act-table th:last-child, td:last-child {
+//   width: 40%;
+// }
+
+td:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  background: #333;
+  color: #fff;
+  padding: 5px;
+  border-radius: 5px;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 10;
+}
+
+//alert
+.error-alert .alert-head {
+  .alert-title{
+    color: white;
+  }
+  background-color: red;
+  text-align: center;
+}
+
+.error-alert .alert-message {
+  padding-top: 1rem !important;
+  padding: 1rem;
+  text-align: center;
+}
+
+.error-alert .alert-button-group {
+  display: flex;
+  justify-content: center;
+}
+
+.error-alert .alert-button {
+  color: red;
 }

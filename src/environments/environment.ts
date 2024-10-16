@@ -5,7 +5,7 @@
 export const environment = {
   production: false,
   host: 'https://www.tutores.co',
-  apiUrl: 'https://www.tutores.co'
+  apiUrl: 'https://www.tutores.co/api'
 };
 
 /*
