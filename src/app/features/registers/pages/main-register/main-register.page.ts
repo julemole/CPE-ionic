@@ -24,13 +24,13 @@ export class MainRegisterPage {
 
   // Arrays para evidencias fotográficas y anexos
   evidences = [
-    { name: 'Nombre evidencia fotográfica 1' },
-    { name: 'Nombre evidencia fotográfica 2' }
+    { name: 'Nombre evidencia fotográfica 1', id: 1 },
+    { name: 'Nombre evidencia fotográfica 2', id: 2 }
   ];
 
   anexos = [
-    { name: 'Anexo 1' },
-    { name: 'Anexo 2' }
+    { name: 'Anexo 1', id: 1 },
+    { name: 'Anexo 2', id: 2 }
   ];
 
   //controles
@@ -50,14 +50,14 @@ export class MainRegisterPage {
 
   // Método para agregar evidencias
   addEvidence(): void {
-    const newEvidence = { name: `Nueva evidencia ${this.evidences.length + 1}` };
+    const newEvidence = { name: `Nueva evidencia ${this.evidences.length + 1}`, id: this.evidences.length + 1 };
     this.evidences.push(newEvidence);
     // this.router.navigate(['/tracing/add']);
   }
 
   // Método para agregar más anexos
   addAnexo(): void {
-    const newAnexo = { name: `Nuevo anexo ${this.anexos.length + 1}` };
+    const newAnexo = { name: `Nuevo anexo ${this.anexos.length + 1}`, id: this.anexos.length + 1 };
     this.anexos.push(newAnexo);
   }
 
