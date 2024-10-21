@@ -1,30 +1,58 @@
 <ion-content>
   <section class="main-container">
-    <app-banner-gov class="h-45"/>
+    <app-banner-gov class="h-45" />
     <article class="login-container">
       <div class="icon-login-ct">
         <ion-icon name="person-circle-outline" class="icon-login"></ion-icon>
       </div>
       <form class="form-container" [formGroup]="loginForm" (ngSubmit)="login()">
         <div class="w-100">
-          <ion-input label="Usuario" label-placement="floating" fill="outline" type="text" formControlName="email"
-            helperText="Escribe tu usuario" errorText="Campo obligatorio"
+          <ion-input
+            label="Usuario"
+            label-placement="floating"
+            fill="outline"
+            type="text"
+            formControlName="email"
+            helperText="Escribe tu usuario"
+            errorText="Campo obligatorio"
           ></ion-input>
         </div>
         <div class="w-100">
-          <ion-input class="inp-style" label="Contraseña" label-placement="floating" fill="outline" [type]="showPass ? 'text' : 'password'"
-           formControlName="password" helperText="Escribe tu contraseña" errorText="Campo obligatorio"
+          <ion-input
+            class="inp-style"
+            label="Contraseña"
+            label-placement="floating"
+            fill="outline"
+            [type]="showPass ? 'text' : 'password'"
+            formControlName="password"
+            helperText="Escribe tu contraseña"
+            errorText="Campo obligatorio"
           >
             @if(showPass){
-              <ion-icon name="eye-off-outline" class="icon" (click)="showPassword()"></ion-icon>
+            <ion-icon
+              name="eye-off-outline"
+              class="icon"
+              (click)="showPassword()"
+            ></ion-icon>
             } @else {
-              <ion-icon name="eye-outline" class="icon" (click)="showPassword()"></ion-icon>
+            <ion-icon
+              name="eye-outline"
+              class="icon"
+              (click)="showPassword()"
+            ></ion-icon>
             }
           </ion-input>
-          <span class="forgot-pass"><a [routerLink]="['/recover-pass']">¿Olvidaste tu contraseña?</a></span>
         </div>
-        <ion-button type="submit" expand="block">Ingresar</ion-button>
-        <!-- <span>¿Aún no tienes cuenta? <a href="/register">Registrate aquí</a></span> -->
+        <ion-button type="submit" expand="block">
+          <ion-icon slot="start" name="lock-closed-outline"></ion-icon>
+          Iniciar sesión
+        </ion-button>
+        <span class="forgot-pass"
+          ><a [routerLink]="['/recover-pass']"
+            >¿Olvidaste tu contraseña?</a
+
+          >
+        </span>
       </form>
     </article>
   </section>

@@ -1,0 +1,21 @@
+.filters-section {
+  margin: 2rem 1rem 0 1rem;
+}
+
+.form-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .8rem;
+}
+
+ion-toolbar {
+  ion-title {
+    padding: 0;
+  }
+  ion-buttons {
+    align-items: center;
+    ion-icon {
+      font-size: 2rem;
+    }
+  }
+}

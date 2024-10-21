@@ -1,3 +1,15 @@
+ion-toolbar {
+  ion-title {
+    padding: 0;
+  }
+  ion-buttons {
+    align-items: center;
+    ion-icon {
+      font-size: 2rem;
+    }
+  }
+}
+
 .img {
   width: 100px;
   height: auto;
@@ -47,3 +59,5 @@
   justify-content: center;
   margin-top: 1rem;
 }
+
+

@@ -6,29 +6,71 @@
     <ion-title>
       Mis registros
     </ion-title>
+    <ion-buttons slot="start">
+      <ion-button>
+        <ion-icon name="document-text-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
+  <!-- <section class="filters-section">
+    <form class="form-container" [formGroup]="searchForm">
+      <ion-select label="Departamento" placeholder="Selecciona una opción" label-placement="floating" fill="outline" class="select-item" formControlName="department">
+        <ion-select-option value="apple">Apple</ion-select-option>
+        <ion-select-option value="banana">Banana</ion-select-option>
+        <ion-select-option value="orange">Orange</ion-select-option>
+      </ion-select>
+      <ion-select label="Zona" placeholder="Selecciona una opción" label-placement="floating" fill="outline" class="select-item" formControlName="zone">
+        <ion-select-option value="apple">Apple</ion-select-option>
+        <ion-select-option value="banana">Banana</ion-select-option>
+        <ion-select-option value="orange">Orange</ion-select-option>
+      </ion-select>
+      <ion-select label="Municipio" placeholder="Selecciona una opción" label-placement="floating" fill="outline" class="select-item" formControlName="city">
+        <ion-select-option value="apple">Apple</ion-select-option>
+        <ion-select-option value="banana">Banana</ion-select-option>
+        <ion-select-option value="orange">Orange</ion-select-option>
+      </ion-select>
+      <ion-select label="Sede" placeholder="Selecciona una opción" label-placement="floating" fill="outline" class="select-item" formControlName="headquarters">
+        <ion-select-option value="apple">Apple</ion-select-option>
+        <ion-select-option value="banana">Banana</ion-select-option>
+        <ion-select-option value="orange">Orange</ion-select-option>
+      </ion-select>
+      <div class="buttons">
+        <ion-button type="submit" expand="block">Buscar</ion-button>
+        <ion-button expand="block" color="medium" (click)="clearFields()" [disabled]="!searchForm.dirty">Limpiar</ion-button>
+      </div>
+    </form>
+  </section> -->
+  <!-- <span>{{registers() | json}}</span> -->
+  @if (myRegisters.length){
   <ion-card>
-    <div class="table-container registers-table">
-      <table>
-        <tr>
-          <th>Registro</th>
-          <th>Institución Educativa</th>
-        </tr>
-        @for( row of data; track row.zona; let i = $index;){
+      <div class="table-container registers-table">
+        <table>
           <tr>
-            <td [attr.data-tooltip]="row.departamento">{{row.departamento}}</td>
-            <td [attr.data-tooltip]="row.zona">{{row.zona}}</td>
+            <th>Registro</th>
+            <th>Institución Educativa</th>
           </tr>
-        }
-      </table>
+          @for( register of myRegisters; track register.id || register.uuid; let i = $index;){
+            <tr>
+              <td><a [routerLink]="['/registers', register.id || register.uuid]">{{register.created || register.date_created | date:'dd/MM/yyyy'}}</a></td>
+              <td>{{register.sede || register.sede_uuid || 'sin sede'}}</td>
+            </tr>
+          }
+        </table>
 
-      <ion-infinite-scroll threshold="100px" (ionInfinite)="loadMoreData($event)">
-        <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Cargando más datos...">
-        </ion-infinite-scroll-content>
-      </ion-infinite-scroll>
+        @if(hasMoreData){
+          <ion-infinite-scroll threshold="50px" (ionInfinite)="loadMoreData($event)">
+            <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Cargando más datos...">
+            </ion-infinite-scroll-content>
+          </ion-infinite-scroll>
+        }
+      </div>
+    </ion-card>
+  } @else {
+    <div class="ion-margin">
+      <p>No se encontraron registros</p>
     </div>
-  </ion-card>
+  }
 </ion-content>

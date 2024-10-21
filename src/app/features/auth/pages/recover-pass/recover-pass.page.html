@@ -3,11 +3,11 @@
     <app-banner-gov class="h-45"/>
     <article class="recover-ct">
       <ion-buttons slot="start" class="back-btn">
-        <ion-back-button text="Inicio de sesión" defaultHref="/login"></ion-back-button>
+        <ion-back-button text="Regresar" defaultHref="/login"></ion-back-button>
       </ion-buttons>
       <div class="form-section">
         <div class="icon-login-ct">
-          <ion-icon name="key-outline" class="icon-login"></ion-icon>
+          <ion-icon name="key" class="icon-login"></ion-icon>
         </div>
         <small class="ion-text-center ion-margin-top">Ingresa el correo electrónico asociado a tu cuenta y sigue las instrucciones.</small>
         <form class="form-container">
@@ -17,7 +17,10 @@
               errorText="El formato del correo no es válido"
             ></ion-input>
           </div>
-          <ion-button id="code-alert" expand="block" (click)="sendEmail()" [disabled]="email.value && email.invalid">Enviar</ion-button>
+          <ion-button id="code-alert" expand="block" (click)="sendEmail()" [disabled]="email.value && email.invalid">
+            <ion-icon slot="start" name="send-outline"></ion-icon>
+            Enviar
+          </ion-button>
         </form>
       </div>
     </article>

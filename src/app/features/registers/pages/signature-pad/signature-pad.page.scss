@@ -1,4 +1,5 @@
 .container-cv {
+  position: relative;
   display: flex;
   justify-content: center;
 }
@@ -8,4 +9,17 @@
   border: 1px solid #000;
   // border-radius: .5rem;
   margin: 0 auto;
+}
+
+.btns-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.img-signature {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
 }

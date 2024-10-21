@@ -6,10 +6,13 @@
         <ion-back-button defaultHref="/recover-pass"></ion-back-button>
       </ion-buttons>
       <div class="form-section">
-        <div class="icon-login-ct">
-          <ion-icon name="key-outline" class="icon-login"></ion-icon>
-        </div>
+        <small class="ion-text-center">Completa los campos para restaurar tu contraseña</small>
         <form class="form-container">
+          <div class="w-100">
+            <ion-input label="Usuario" label-placement="floating" fill="outline" type="text" [formControl]="username"
+              helperText="Escribe tu nombre de usuario" errorText="Campo obligatorio"
+            ></ion-input>
+          </div>
           <div class="w-100">
             <ion-input class="inp-style" label="Contraseña temporal" label-placement="floating" fill="outline" [type]="showTempPass ? 'text' : 'password'"
               [formControl]="temporalPass" helperText="Escribe la contraseña temporal" errorText="Campo obligatorio"
@@ -32,7 +35,10 @@
               }
             </ion-input>
           </div>
-          <ion-button id="code-alert" expand="block" >Enviar</ion-button>
+          <ion-button id="code-alert" expand="block" (click)="resetPass()">
+            <ion-icon slot="start" name="send-outline"></ion-icon>
+            Enviar
+          </ion-button>
         </form>
       </div>
     </article>

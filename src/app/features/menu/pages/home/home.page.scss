@@ -18,11 +18,22 @@
 
 .icon-menu {
   font-size: 7rem;
-  color: #000;
 }
 
 p {
   font-size: small;
+  color: var(--ion-color-primary);
   font-weight: bold;
   margin: 0;
+}
+
+.btn-relative {
+  position: relative;
+}
+
+.icon-absolute {
+  font-size: 2rem;
+  position: absolute;
+  top: 0;
+  right: 0;
 }

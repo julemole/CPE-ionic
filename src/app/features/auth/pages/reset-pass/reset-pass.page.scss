@@ -21,19 +21,7 @@ ion-content::part(scroll) {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin: 0 1rem;
-}
-
-.icon-login-ct {
-  display: flex;
-  justify-content: center;
-}
-
-.icon-login {
-  font-size: 3rem;
-  border: 3px solid #000;
-  border-radius: 50%;
-  padding: 1rem;
+  margin: 0 15%;
 }
 
 .logo {
@@ -51,7 +39,7 @@ ion-content::part(scroll) {
 }
 
 .back-btn {
-  margin: .5rem 0;
+  color: var(--ion-color-primary);
 }
 
 .inp-style{

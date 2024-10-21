@@ -20,6 +20,15 @@ export const menuRoutes: Routes = [
     children: [
       { path: 'me', loadComponent: () => import('./pages/my-registers/my-registers.page').then((m) => m.MyRegistersPage) },
       { path: 'add', loadChildren: () => import('../registers/registers.routes').then((m) => m.registerRoutes) },
+      { path: ':idRegister', loadComponent: () => import('../registers/pages/main-register/main-register.page').then((m) => m.MainRegisterPage) },
+      {
+        path: ':idRegister/photo/:idPhoto',
+        loadComponent: () => import('../registers/pages/add-photo/add-photo.page').then((m) => m.AddPhotoPage)
+      },
+      {
+        path: ':idRegister/attached/:attachId',
+        loadComponent: () => import('../registers/pages/add-attached/add-attached.page').then((m) => m.AddAttachedPage)
+      },
     ]
   }
 ]

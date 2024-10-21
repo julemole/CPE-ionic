@@ -1,17 +1,37 @@
 <ion-header [translucent]="true">
   <ion-toolbar class="toolbar">
     <ion-buttons slot="start">
-      <ion-back-button></ion-back-button>
+      <ion-back-button [defaultHref]="'/registers/add/select-institution/' + institutionId"></ion-back-button>
     </ion-buttons>
     <ion-title>Firma de registro</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div class="container-cv">
-    <canvas #canvas class="canvas-style"></canvas>
-  </div>
-  <ion-button (click)="clearSignature()">Borrar Firma</ion-button>
-  <ion-button (click)="saveSignature()">Guardar Firma</ion-button>
-  <img [src]="file" alt="">
+    <div class="container-cv">
+      <canvas #canvas class="canvas-style"></canvas>
+      @if(signature() && !editSignature){
+        <img [src]="signature()" alt="firma" class="img-signature">
+      }
+    </div>
+  @if(!signature() || editSignature){
+    <div class="btns-container">
+      <ion-button (click)="clearSignature()">
+        <ion-icon slot="start" name="trash"></ion-icon>
+        Borrar Firma
+      </ion-button>
+      <ion-button (click)="saveSignature()">
+        <ion-icon slot="start" name="create-outline"></ion-icon>
+        Guardar Firma
+      </ion-button>
+    </div>
+  }
+  @if(signature() && !editSignature){
+    <div class="btns-container">
+      <ion-button (click)="updateSignature()">
+        <ion-icon slot="start" name="create-outline"></ion-icon>
+        Actualizar Firma
+      </ion-button>
+    </div>
+  }
 </ion-content>

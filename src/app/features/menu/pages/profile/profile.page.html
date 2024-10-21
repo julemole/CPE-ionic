@@ -6,60 +6,102 @@
     <ion-title>
       Mi perfil
     </ion-title>
+    <ion-buttons slot="start">
+      <ion-button>
+        <ion-icon name="person-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <!-- <div class="icon-container">
-    <ion-icon name="person-outline"></ion-icon>
-  </div> -->
-  <ion-card>
-    <ion-card-header>
-      <ion-card-title class="ion-text-center">Información del Tutor</ion-card-title>
-    </ion-card-header>
+<ion-content [fullscreen]="true" class="ion-padding">
+  <span>{{error | json}}</span>
+  <!-- <span>UserInfo: {{userInfo | json}}</span> -->
+    @if(userInfo?.id || userInfo?.uuid){
+    <!-- <ion-card-title class="ion-text-center ion-margin-bottom">Información del Tutor</ion-card-title> -->
+    <ion-grid>
+      <ion-row>
+        <ion-col size="6">
+          <p><strong>Nombre Tutor:</strong></p>
+        </ion-col>
+        <ion-col size="6">
+          <p class="ion-text-capitalize">{{tutorName || 'No se encontró'}}</p>
+        </ion-col>
+      </ion-row>
 
-    <ion-card-content>
-      <ion-item>
-        <ion-input label="Nombre Tutor" labelPlacement="stacked" placeholder="Nombre" [(ngModel)]="tutorName" readonly></ion-input>
-      </ion-item>
+      <ion-row>
+        <ion-col size="6">
+          <p><strong>{{documentType || 'Cédula de ciudadanía'}}</strong></p>
+        </ion-col>
+        <ion-col size="6">
+          <p>{{identification || 'No se encontró'}}</p>
+        </ion-col>
+      </ion-row>
 
-      <ion-item>
-        <ion-input label="Cédula de ciudadanía" labelPlacement="stacked" placeholder="Cédula" [(ngModel)]="identification" readonly></ion-input>
-      </ion-item>
+      <ion-row>
+        <ion-col size="6">
+          <p><strong>Correo electrónico:</strong></p>
+        </ion-col>
+        <ion-col size="6">
+          <p>{{email || 'No se encontró'}}</p>
+        </ion-col>
+      </ion-row>
 
-      <ion-item>
-        <ion-input label="Correo electrónico" labelPlacement="stacked" placeholder="Correo" [(ngModel)]="email" readonly></ion-input>
-      </ion-item>
+      <ion-row>
+        <ion-col size="6">
+          <p><strong>Nombre de usuario:</strong></p>
+        </ion-col>
+        <ion-col size="6">
+          <p>{{email || 'No se encontró'}}</p>
+        </ion-col>
+      </ion-row>
 
-      <ion-item>
-        <ion-input label="Departamento" labelPlacement="stacked" placeholder="Departamento" [(ngModel)]="department" readonly></ion-input>
-      </ion-item>
+      <ion-row>
+        <ion-col size="6">
+          <p><strong>Departamento:</strong></p>
+        </ion-col>
+        <ion-col size="6">
+          <p>{{department || 'No se encontró'}}</p>
+        </ion-col>
+      </ion-row>
 
-      <ion-item>
-        <ion-input label="Ruta" labelPlacement="stacked" placeholder="Ruta" [(ngModel)]="route" readonly></ion-input>
-      </ion-item>
+      <ion-row>
+        <ion-col size="6">
+          <p><strong>Zonas:</strong></p>
+        </ion-col>
+        <ion-col size="6">
+          @for(zone of zonesList; track zone.id || zone.uuid){
+            <p>{{zone.title || zone.name || 'No se encontró'}}</p>
+          }
+        </ion-col>
+      </ion-row>
+      @for(group of groups; track group.id || group.uuid; let i = $index;){
+        <ion-row>
+          <ion-col size="6">
+            <p><strong>Municipio {{i + 1}}</strong></p>
+          </ion-col>
+          <ion-col size="6">
+            <p>{{group.field_municipality || group.municipality || 'No se encontró'}}</p>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="6">
+            <p><strong>Sedes</strong></p>
+          </ion-col>
+          <ion-col size="6">
+            @for(sede of group.groupOffices || group.sedes; track sede.id || sede.uuid){
+              <p>{{sede.attributes.title || sede.name || 'No se encontró'}}</p>
+            }
+          </ion-col>
+        </ion-row>
+      }
+    </ion-grid>
 
-      <!-- <ion-list *ngFor="let municipio of tutor.municipios"> -->
-      <ion-list>
-        <ion-item>
-          <ion-label>
-            <strong>Municipio:</strong> hola
-          </ion-label>
-        </ion-item>
-
-        <ion-list>
-        <!-- <ion-list *ngFor="let sede of municipio.sedes"> -->
-          <ion-item>
-            <ion-label>
-              - sede
-            </ion-label>
-          </ion-item>
-        </ion-list>
-      </ion-list>
-
-    </ion-card-content>
-  </ion-card>
-  <div class="btn-ct">
-    <ion-button class="ion-margin-vertical" expand="stacked" (click)="logout()">Cerrar sesión</ion-button>
-  </div>
-</ion-content>
+    <div class="btn-ct">
+      <ion-button class="ion-margin-vertical" expand="stacked" (click)="logout()">
+        <ion-icon name="log-out-outline" slot="start"></ion-icon>
+        Cerrar sesión
+      </ion-button>
+    </div>
+  }
+  </ion-content>

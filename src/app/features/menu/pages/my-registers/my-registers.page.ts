@@ -1,28 +1,84 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonBackButton, IonButtons, IonCard, IonIcon, IonCardHeader, IonCardTitle, IonCardContent, IonButton, IonInfiniteScrollContent, IonInfiniteScroll } from '@ionic/angular/standalone';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonBackButton, IonButtons, IonCard, IonIcon, IonCardHeader, IonCardTitle, IonCardContent, IonButton, IonInfiniteScrollContent, IonInfiniteScroll, IonSelectOption, LoadingController } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { documentTextOutline, save } from 'ionicons/icons';
+import { RegistersService } from 'src/app/features/registers/services/registers.service';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
+import { RouterLinkWithHref } from '@angular/router';
+import { ConnectivityService } from '../../../../shared/services/connectivity.service';
+import { DatabaseService } from 'src/app/shared/services/database.service';
 
 @Component({
   selector: 'app-my-registers',
   templateUrl: './my-registers.page.html',
   styleUrls: ['./my-registers.page.scss'],
   standalone: true,
-  imports: [IonInfiniteScroll, IonInfiniteScrollContent, IonButton, IonCardContent, IonCardTitle, IonCardHeader, IonBackButton, IonButtons, IonCard, IonIcon, IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule]
+  imports: [RouterLinkWithHref, IonInfiniteScroll, IonInfiniteScrollContent, IonSelectOption, IonButton, IonCardContent, IonCardTitle, IonCardHeader, IonBackButton, IonButtons, IonCard, IonIcon, IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, ReactiveFormsModule]
 })
-export class MyRegistersPage {
+export class MyRegistersPage implements OnInit {
+  isOnline: WritableSignal<boolean> = signal(true);
+  registers: WritableSignal<any[]> = signal([]);
 
-  data = [
-    { id: '1', departamento: 'Meta', zona: 'Zona 1', municipio: 'Acacías', sede: 'Colegio 1' },
-    { id: '2', departamento: 'Meta', zona: 'Zona 2', municipio: 'Villavicencio', sede: 'Colegio 2' },
-    { id: '3', departamento: 'Meta', zona: 'Zona 3', municipio: 'Granada', sede: 'Colegio 3' },
-    { id: '4', departamento: 'Meta', zona: 'Zona 4', municipio: 'Puerto López', sede: 'Colegio 4' },
-    { id: '5', departamento: 'Meta', zona: 'Zona 5', municipio: 'Restrepo', sede: 'Colegio 5' },
-    { id: '6', departamento: 'Meta', zona: 'Zona 6', municipio: 'San Martín', sede: 'Colegio 6' },
-    { id: '7', departamento: 'Meta', zona: 'Zona 7', municipio: 'Uribe', sede: 'Colegio 7' },
-  ]
+  fb: FormBuilder = inject(FormBuilder);
+  searchForm = this.fb.group({
+    department: [''],
+    zone: [''],
+    city: [''],
+    headquarters: ['']
+  });
+  myRegisters: any[] = [];
+  hasMoreData: boolean = false;
+  loading!: HTMLIonLoadingElement;
 
-  constructor() { }
+  constructor(private registersService: RegistersService, private localStorageSv: LocalStorageService, private loadingController: LoadingController, private connectivityService: ConnectivityService, private dbService: DatabaseService) {
+    addIcons({documentTextOutline});
+    this.isOnline = this.connectivityService.getNetworkStatus();
+  }
+
+  async kk() {
+    await this.dbService.loadRegisters();
+    this.registers = this.dbService.getRegisterList();
+  }
+
+  async ngOnInit() {
+    const idUser = this.localStorageSv.getItem('USER_ID');
+    if(idUser) {
+      this.showLoading();
+      if(this.isOnline()){
+        this.getRegisters(idUser);
+      } else {
+        await this.getRegistersOffline(idUser);
+      }
+      console.log(this.isOnline())
+      this.kk();
+    }
+  }
+
+  getRegisters(idUser: string): void {
+    this.registersService.getRegistersByUser(idUser).subscribe({
+      next: (resp) => {
+        this.myRegisters = resp;
+        console.log(this.myRegisters)
+        this.hideLoading();
+      },
+      error: (error) => {
+        this.hideLoading();
+        console.error(error);
+      }
+    });
+  }
+
+  async getRegistersOffline(idUser: string) {
+    try {
+      this.myRegisters = await this.registersService.getRegistersByUserOffline(idUser);
+      await this.hideLoading();
+    } catch (error) {
+      await this.hideLoading();
+      throw new Error('Error al obtener los registros');
+    }
+  }
 
   loadMoreData(event: any) {
     // setTimeout(() => {
@@ -38,5 +94,18 @@ export class MyRegistersPage {
     //     event.target.disabled = true;
     //   }
     // }, 500);
+  }
+
+  clearFields(): void {
+    this.searchForm.reset();
+  }
+
+  async showLoading() {
+    this.loading = await this.loadingController.create();
+    await this.loading.present();
+  }
+
+  async hideLoading() {
+    await this.loading.dismiss();
   }
 }

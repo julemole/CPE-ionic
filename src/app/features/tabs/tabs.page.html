@@ -1,0 +1,24 @@
+<ion-tabs>
+  <ion-tab-bar slot="bottom" color="primary">
+    <ion-tab-button [routerLink]="['/registers/add/select-institution' , institutionId, 'add-photo']">
+      <ion-icon aria-hidden="true" name="camera"></ion-icon>
+      <ion-label class="i-label">Agregar evidencia</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button [routerLink]="['/registers/add/select-institution' , institutionId, 'add-attached']">
+      <ion-icon aria-hidden="true" name="document-attach"></ion-icon>
+      <ion-label class="i-label">Agregar anexo</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button [routerLink]="['/registers/add/select-institution' , institutionId, 'signature']">
+      <ion-icon aria-hidden="true" name="create-outline"></ion-icon>
+      <ion-label class="i-label">Firmar registro</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button [disabled]="!signature().length || !photoData().length || !attachedData().length || !registerPayload()?.activity" (click)="saveRegister()">
+    <!-- <ion-tab-button (click)="saveRegister()"> -->
+      <ion-icon aria-hidden="true" name="save"></ion-icon>
+      <ion-label class="i-label">Guardar registro</ion-label>
+    </ion-tab-button>
+  </ion-tab-bar>
+</ion-tabs>

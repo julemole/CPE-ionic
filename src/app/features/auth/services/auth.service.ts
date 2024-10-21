@@ -3,6 +3,7 @@ import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { AuthRequest, AuthResponse } from '../models/auth.interface';
 import { map, Observable } from 'rxjs';
+import { DatabaseService } from 'src/app/shared/services/database.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,10 +12,29 @@ export class AuthService {
 
   hostURL = environment.host;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private dbService: DatabaseService) {}
 
   signIn(credentials: AuthRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.hostURL}/member/login?_format=json`, credentials);
+  }
+
+  async signInOffline(credentials: AuthRequest) {
+    try {
+      const user = await this.dbService.getUserByUsername(credentials.name);
+      const passBasic = btoa(credentials.pass);
+      if (user) {
+        const token = btoa(`${credentials.name}:${credentials.pass}`);
+        if(user.password === passBasic) {
+          return { token, user };
+        } else {
+          throw new Error('Contraseña incorrecta');
+        }
+      } else {
+        throw new Error('No se encontró el usuario');
+      }
+    } catch (error) {
+      throw new Error('Error al iniciar sesión');
+    }
   }
 
   logout(logoutToken: string, csrf_token: string) {
@@ -23,6 +43,22 @@ export class AuthService {
       'X-CSRF-Token': csrf_token
     };
     return this.http.post(`${this.hostURL}/member/logout?_format=json&token=${logoutToken}`, {}, {headers});
+  }
+
+  resetPassword(payload: any): Observable<any>{
+    const headers = {
+      'Content-Type': 'application/json'
+    }
+    const URL = this.hostURL + '/member/lost-password?_format=json';
+    return this.http.post(URL, payload, { headers});
+  }
+
+  setPassword(payload: any): Observable<any>{
+    const headers = {
+      'Content-Type': 'application/json'
+    }
+    const URL = this.hostURL + '/member/lost-password-reset?_format=json';
+    return this.http.post(URL, payload, { headers});
   }
 
   getUserId(token: string): Observable<string> {

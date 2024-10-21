@@ -7,17 +7,40 @@
   }
 }
 
-ion-item {
-  --padding-start: 0px;
-  --inner-padding-start: 0px;
-}
-
-ion-card {
+ion-grid {
+  border: 2px solid #000;
   max-height: 85%;
   overflow-y: auto;
+}
+
+ion-row {
+  display: flex;
+  align-items: stretch;
+}
+
+ion-col:first-child {
+  border-right: 2px solid #000;
+  padding-right: 10px;
+}
+
+p {
+  margin: 5px 0;
+  word-wrap: break-word;
 }
 
 .btn-ct {
   display: flex;
   justify-content: center;
+}
+
+ion-toolbar {
+  ion-title {
+    padding: 0;
+  }
+  ion-buttons {
+    align-items: center;
+    ion-icon {
+      font-size: 2rem;
+    }
+  }
 }

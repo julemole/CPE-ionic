@@ -3,9 +3,12 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>
-      Nuevo registro
-    </ion-title>
+    <ion-title> Nuevo registro </ion-title>
+    <ion-buttons slot="start">
+      <ion-button>
+        <ion-icon name="document-text-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -15,30 +18,27 @@
       <ion-title class="title">Seleccionar institución educativa</ion-title>
     </ion-toolbar>
   </ion-header>
-  <ion-card>
-    <ion-card-header>
-      <ion-card-title>hola</ion-card-title>
-    </ion-card-header>
-
-    <ion-card-content>
-      <ion-accordion-group>
-        @for (zona of tutor.zonas; track zona.id){
-          <ion-accordion>
-            <ion-item slot="header">
-              <ion-label>
-                <strong>{{zona.nombre}}</strong>
-              </ion-label>
+  @if(tutorInfo?.id) {
+    <ion-card-title class="ion-padding-horizontal ion-padding-top">{{tutorInfo?.field_department}}</ion-card-title>
+    <ion-accordion-group class="ion-margin">
+      @for (zone of zonesList; track zone.id){
+        <ion-accordion>
+          <ion-item slot="header">
+            <ion-label>
+              <strong>{{zone.title + ' / ' + zone.field_region}}</strong>
+            </ion-label>
+          </ion-item>
+          <ion-list slot="content">
+            @for(sede of zone.sedes; track sede.id){
+            <ion-item lines="none" class="container-item">
+              <ion-label [routerLink]="[sede.id]" class="label"
+                >{{sede.attributes.title}}</ion-label
+              >
             </ion-item>
-            <ion-list slot="content">
-              @for(institucion of zona.instituciones; track institucion.id){
-              <ion-item class="container-item">
-                <ion-label [routerLink]="[institucion.id]" class="label">{{institucion.nombre}}</ion-label>
-              </ion-item>
-              }
-            </ion-list>
-          </ion-accordion>
-        }
-      </ion-accordion-group>
-    </ion-card-content>
-  </ion-card>
+            }
+          </ion-list>
+        </ion-accordion>
+      }
+    </ion-accordion-group>
+  }
 </ion-content>

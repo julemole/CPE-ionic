@@ -19,7 +19,7 @@ ion-content::part(scroll) {
   height: 60%;
   flex-direction: column;
   justify-content: center;
-  margin: 0 1rem;
+  margin: 0 15%;
 }
 
 .icon-login-ct {
@@ -29,6 +29,7 @@ ion-content::part(scroll) {
 
 .icon-login {
   font-size: 6rem;
+  color: var(--ion-color-primary);
 }
 
 .logo {
@@ -41,7 +42,7 @@ ion-content::part(scroll) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.2rem;
+  gap: 1rem;
   margin: 1.5rem 0 0 0;
 }
 
@@ -60,7 +61,6 @@ ion-content::part(scroll) {
 
 .forgot-pass {
   display: block;
-  margin-top: .5rem;
   text-align: right;
   font-size: .8rem;
   color: var(--ion-color-primary);

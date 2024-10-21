@@ -8,12 +8,34 @@
   --min-height: 2.5rem;
 }
 
-.i-label {
-  font-size: .6rem;
-  white-space: normal;
-  text-align: center;
+ion-toolbar {
+  ion-title {
+    padding: 0;
+  }
+  ion-buttons {
+    align-items: center;
+    ion-icon {
+      font-size: 2rem;
+    }
+  }
 }
 
-ion-icon, ion-label {
-  color: #FFF;
+ion-button {
+  ion-icon {
+    font-size: 1rem;
+  }
+}
+
+.title-subsect {
+  font-weight: bold;
+}
+
+.list-item {
+  font-size: 14px;
+  text-decoration: underline;
+  margin: 0;
+}
+
+.item {
+  height: 35px;
 }
