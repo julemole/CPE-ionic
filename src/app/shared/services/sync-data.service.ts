@@ -29,6 +29,7 @@ export class SyncDataService {
       await this.parametricsData();
       await this.nodesData(idUser);
       await this.registerSyncData('Primera sincronización de datos. Usuario: ' + idUser);
+      await this.dbService.loadAllData();
     } catch (error) {
       console.error('Error sincronizando todos los datos', error);
     }
@@ -82,6 +83,20 @@ export class SyncDataService {
     }
   }
 
+  async syncExistsUserData(idUser: string, pass: string) {
+    try {
+      let userInLocalDB: any = await this.dbService.getUserById(idUser); // Suponiendo que tienes un método para obtener el usuario por id
+      if (userInLocalDB) {
+        userInLocalDB.password = pass; // Actualizamos la contraseña
+
+        await this.dbService.updateUserById(idUser, userInLocalDB); // Método que actualiza el usuario
+      } else {
+        console.error('Usuario no encontrado en la base de datos local');
+      }
+    } catch (error) {
+      console.error('Error sincronizando la información del usuario', error);
+    }
+  }
 
   async parametricsData() {
     try {
@@ -237,8 +252,8 @@ export class SyncDataService {
 
       if(annexList.length) {
         const annexPromises = annexList.map( async (annex: any) => {
-          // const file = annex.file ? await downloadAndSaveFile(annex.file) : '';
-          const file = '';
+          const file = annex.file ? await downloadAndSaveFile(annex.file) : '';
+          // const file = '';
           const annexPayload: Annex = {
             uuid: annex.id,
             name: annex.title,
@@ -256,8 +271,8 @@ export class SyncDataService {
 
       if(evidenceList.length) {
         const evidencePromises = evidenceList.map( async (evidence: any) => {
-          // const file = evidence.file ? await downloadAndSaveFile(evidence.file) : ''
-          const file = ''
+          const file = evidence.file ? await downloadAndSaveFile(evidence.file) : ''
+          // const file = ''
           const evidencePayload: Evidence = {
             uuid: evidence.id,
             name: evidence.title,
@@ -275,8 +290,6 @@ export class SyncDataService {
         });
         await Promise.all(evidencePromises);
       }
-
-
 
       if (sedeGroupList.length) {
         const sedeGroupPromises = sedeGroupList.map(async (sedeGroup: any) => {
@@ -301,7 +314,6 @@ export class SyncDataService {
 
         await Promise.all(sedeGroupPromises);
       }
-
 
       // Manejo de las zonas y sus relaciones
       if (zoneList.length) {
@@ -342,7 +354,8 @@ export class SyncDataService {
       // Manejo de los registros y sus relaciones
       if (registerList.length) {
         const registerPromises = registerList.map(async (register: any) => {
-          const file = '';  // Aquí iría la lógica de descarga si la necesitas
+          const file = register.signature_file ? await downloadAndSaveFile(register.signature_file) : ''
+          // const file = '';
 
           const registerPayload: Register = {
             uuid: register.id,
@@ -388,21 +401,24 @@ export class SyncDataService {
 
   async newUserData(idUser: string, pass: string) {
     try {
-      await this.syncUserData(idUser, pass);
+      await this.syncExistsUserData(idUser, pass);
 
       const annexList = await firstValueFrom(this.nodesService.getAnnexList(idUser));
       const evidenceList = await firstValueFrom(this.nodesService.getEvidenceList(idUser));
       const registerList = await firstValueFrom(this.nodesService.getRegisterList(idUser));
 
       if(annexList.length) {
-        const annexPromises = annexList.map((annex: any) => {
+        const annexPromises = annexList.map( async (annex: any) => {
+          // const file = annex.file ? await downloadAndSaveFile(annex.file) : '';
+          const file = '';
           const annexPayload: Annex = {
             uuid: annex.id,
             name: annex.title,
             description: annex.description,
             date_created: annex.created,
             is_synced: 1,
-            file: annex.file,
+            sync_action: '',
+            file,
             status: annex.status,
           };
           return this.dbService.addAnnex(annexPayload);
@@ -411,17 +427,20 @@ export class SyncDataService {
       }
 
       if(evidenceList.length) {
-        const evidencePromises = evidenceList.map((evidence: any) => {
+        const evidencePromises = evidenceList.map( async (evidence: any) => {
+          // const file = evidence.file ? await downloadAndSaveFile(evidence.file) : ''
+          const file = ''
           const evidencePayload: Evidence = {
             uuid: evidence.id,
             name: evidence.title,
             description: evidence.description,
             date_created: evidence.date,
             time_created: evidence.time,
-            latitude: evidence.field_latitude,
-            longitude: evidence.field_longitude,
+            latitude: evidence.latitude,
+            longitude: evidence.longitude,
             is_synced: 1,
-            file: evidence.file,
+            sync_action: '',
+            file,
             status: evidence.status,
           };
           return this.dbService.addEvidence(evidencePayload);
@@ -430,12 +449,14 @@ export class SyncDataService {
       }
 
       if (registerList.length) {
-        const registerPromises = registerList.map( async (register: any) => {
+        const registerPromises = registerList.map(async (register: any) => {
+          const file = '';  // Aquí iría la lógica de descarga si la necesitas
+
           const registerPayload: Register = {
             uuid: register.id,
             name: register.title,
             date_created: register.created,
-            signature_file: register.signature_file,
+            signature_file: file,
             approach_uuid: register.approach,
             activity_uuid: register.activity,
             subactivity_uuid: register.sub_activity,
@@ -445,26 +466,31 @@ export class SyncDataService {
             status: register.status,
           };
 
-          if(register.evidenceList.length) {
+          // Primero crear el registro
+          await this.dbService.addRegister(registerPayload);
+
+          // Luego agregar las evidencias al registro
+          if (register.evidenceList.length) {
             const registerEvidencePromises = register.evidenceList.map((evidence: string) =>
               this.dbService.addEvidenceToRegister(register.id, evidence)
             );
             await Promise.all(registerEvidencePromises);
           }
 
-          if(register.annexList.length) {
+          // Luego agregar los anexos al registro
+          if (register.annexList.length) {
             const registerAnnexPromises = register.annexList.map((annex: string) =>
               this.dbService.addAnnexToRegister(register.id, annex)
             );
             await Promise.all(registerAnnexPromises);
           }
-
-          return this.dbService.addRegister(registerPayload);
         });
+
         await Promise.all(registerPromises);
       }
 
       await this.registerSyncData('Sincronización de datos de usuario. Usuario: ' + idUser);
+      await this.dbService.loadAllData();
 
     } catch (error) {
       console.error('Error sincronizando la información del usuario', error);

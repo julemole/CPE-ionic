@@ -3,9 +3,7 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>
-      Mi perfil
-    </ion-title>
+    <ion-title> Mi perfil </ion-title>
     <ion-buttons slot="start">
       <ion-button>
         <ion-icon name="person-circle-outline"></ion-icon>
@@ -15,93 +13,97 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding">
-  <span>{{error | json}}</span>
-  <!-- <span>UserInfo: {{userInfo | json}}</span> -->
-    @if(userInfo?.id || userInfo?.uuid){
-    <!-- <ion-card-title class="ion-text-center ion-margin-bottom">Información del Tutor</ion-card-title> -->
-    <ion-grid>
-      <ion-row>
-        <ion-col size="6">
-          <p><strong>Nombre Tutor:</strong></p>
-        </ion-col>
-        <ion-col size="6">
-          <p class="ion-text-capitalize">{{tutorName || 'No se encontró'}}</p>
-        </ion-col>
-      </ion-row>
+  @if(userInfo?.id || userInfo?.uuid){
+  <!-- <ion-card-title class="ion-text-center ion-margin-bottom">Información del Tutor</ion-card-title> -->
+  <ion-grid>
+    <ion-row>
+      <ion-col size="6">
+        <p><strong>Nombre Tutor:</strong></p>
+      </ion-col>
+      <ion-col size="6">
+        <p class="ion-text-capitalize">{{tutorName || 'No se encontró'}}</p>
+      </ion-col>
+    </ion-row>
 
-      <ion-row>
-        <ion-col size="6">
-          <p><strong>{{documentType || 'Cédula de ciudadanía'}}</strong></p>
-        </ion-col>
-        <ion-col size="6">
-          <p>{{identification || 'No se encontró'}}</p>
-        </ion-col>
-      </ion-row>
+    <ion-row>
+      <ion-col size="6">
+        <p><strong>{{documentType || 'Cédula de ciudadanía'}}</strong></p>
+      </ion-col>
+      <ion-col size="6">
+        <p>{{identification || 'No se encontró'}}</p>
+      </ion-col>
+    </ion-row>
 
-      <ion-row>
-        <ion-col size="6">
-          <p><strong>Correo electrónico:</strong></p>
-        </ion-col>
-        <ion-col size="6">
-          <p>{{email || 'No se encontró'}}</p>
-        </ion-col>
-      </ion-row>
+    <ion-row>
+      <ion-col size="6">
+        <p><strong>Correo electrónico:</strong></p>
+      </ion-col>
+      <ion-col size="6">
+        <p>{{email || 'No se encontró'}}</p>
+      </ion-col>
+    </ion-row>
 
-      <ion-row>
-        <ion-col size="6">
-          <p><strong>Nombre de usuario:</strong></p>
-        </ion-col>
-        <ion-col size="6">
-          <p>{{email || 'No se encontró'}}</p>
-        </ion-col>
-      </ion-row>
+    <ion-row>
+      <ion-col size="6">
+        <p><strong>Nombre de usuario:</strong></p>
+      </ion-col>
+      <ion-col size="6">
+        <p>{{email || 'No se encontró'}}</p>
+      </ion-col>
+    </ion-row>
 
-      <ion-row>
-        <ion-col size="6">
-          <p><strong>Departamento:</strong></p>
-        </ion-col>
-        <ion-col size="6">
-          <p>{{department || 'No se encontró'}}</p>
-        </ion-col>
-      </ion-row>
+    <ion-row>
+      <ion-col size="6">
+        <p><strong>Departamento:</strong></p>
+      </ion-col>
+      <ion-col size="6">
+        <p>{{department || 'No se encontró'}}</p>
+      </ion-col>
+    </ion-row>
 
-      <ion-row>
-        <ion-col size="6">
-          <p><strong>Zonas:</strong></p>
-        </ion-col>
-        <ion-col size="6">
-          @for(zone of zonesList; track zone.id || zone.uuid){
-            <p>{{zone.title || zone.name || 'No se encontró'}}</p>
-          }
-        </ion-col>
-      </ion-row>
-      @for(group of groups; track group.id || group.uuid; let i = $index;){
-        <ion-row>
-          <ion-col size="6">
-            <p><strong>Municipio {{i + 1}}</strong></p>
-          </ion-col>
-          <ion-col size="6">
-            <p>{{group.field_municipality || group.municipality || 'No se encontró'}}</p>
-          </ion-col>
-        </ion-row>
-        <ion-row>
-          <ion-col size="6">
-            <p><strong>Sedes</strong></p>
-          </ion-col>
-          <ion-col size="6">
-            @for(sede of group.groupOffices || group.sedes; track sede.id || sede.uuid){
-              <p>{{sede.attributes.title || sede.name || 'No se encontró'}}</p>
-            }
-          </ion-col>
-        </ion-row>
-      }
-    </ion-grid>
+    <ion-row>
+      <ion-col size="6">
+        <p><strong>Zonas:</strong></p>
+      </ion-col>
+      <ion-col size="6">
+        @for(zone of zonesList; track zone.id || zone.uuid){
+        <p>{{zone.title || zone.name || 'No se encontró'}}</p>
+        }
+      </ion-col>
+    </ion-row>
+    @for(group of groups; track group.id || group.uuid; let i = $index;){
+    <ion-row>
+      <ion-col size="6">
+        <p><strong>Municipio {{i + 1}}</strong></p>
+      </ion-col>
+      <ion-col size="6">
+        <p>
+          {{group.field_municipality || group.municipality || 'No se encontró'}}
+        </p>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col size="6">
+        <p><strong>Sedes</strong></p>
+      </ion-col>
+      <ion-col size="6">
+        @if(isOnline()){ @for(sede of group.groupOffices; track sede.id){
+        <p>{{sede.attributes.title || 'No se encontró'}}</p>
+        } } @else { @for(sede of group.sedes; track sede.uuid){
+        <p>{{sede.name || 'No se encontró'}}</p>
+        } }
+      </ion-col>
+    </ion-row>
+    }
+  </ion-grid>
 
-    <div class="btn-ct">
-      <ion-button class="ion-margin-vertical" expand="stacked" (click)="logout()">
-        <ion-icon name="log-out-outline" slot="start"></ion-icon>
-        Cerrar sesión
-      </ion-button>
-    </div>
-  }
-  </ion-content>
+}
+
+
+<div class="btn-ct">
+  <ion-button class="ion-margin-vertical" expand="stacked" (click)="logout()">
+    <ion-icon name="log-out-outline" slot="start"></ion-icon>
+    Cerrar sesión
+  </ion-button>
+</div>
+</ion-content>

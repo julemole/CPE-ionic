@@ -33,7 +33,7 @@ export class AuthService {
         throw new Error('No se encontró el usuario');
       }
     } catch (error) {
-      throw new Error('Error al iniciar sesión');
+      throw new Error('Error en las credenciales');
     }
   }
 

@@ -18,27 +18,29 @@
       <ion-title class="title">Seleccionar institución educativa</ion-title>
     </ion-toolbar>
   </ion-header>
-  @if(tutorInfo?.id) {
-    <ion-card-title class="ion-padding-horizontal ion-padding-top">{{tutorInfo?.field_department}}</ion-card-title>
-    <ion-accordion-group class="ion-margin">
-      @for (zone of zonesList; track zone.id){
-        <ion-accordion>
-          <ion-item slot="header">
-            <ion-label>
-              <strong>{{zone.title + ' / ' + zone.field_region}}</strong>
-            </ion-label>
+  @if(tutorInfo?.id || tutorInfo?.uuid) {
+  <ion-card-title class="ion-padding-horizontal ion-padding-top"
+    >{{tutorInfo?.field_department || tutorInfo?.department}}</ion-card-title
+  >
+  <ion-accordion-group class="ion-margin">
+    @for (zone of zonesList; track zone.id || zone.uuid){
+    <ion-accordion>
+      <ion-item slot="header">
+        <ion-label>
+          <strong>{{(zone.title || zone.name) + ' / ' + (zone.field_region || zone.region)}}</strong>
+        </ion-label>
+      </ion-item>
+      <ion-list slot="content">
+        @for(sede of zone.sedes; track sede.id || sede.uuid){
+          <ion-item lines="none" class="container-item">
+            <ion-label [routerLink]="[sede.id || sede.uuid]" class="label"
+              >{{sede.attributes?.title || sede.name}}</ion-label
+            >
           </ion-item>
-          <ion-list slot="content">
-            @for(sede of zone.sedes; track sede.id){
-            <ion-item lines="none" class="container-item">
-              <ion-label [routerLink]="[sede.id]" class="label"
-                >{{sede.attributes.title}}</ion-label
-              >
-            </ion-item>
-            }
-          </ion-list>
-        </ion-accordion>
-      }
-    </ion-accordion-group>
+        }
+      </ion-list>
+    </ion-accordion>
+    }
+  </ion-accordion-group>
   }
 </ion-content>

@@ -26,6 +26,7 @@ import {
   IonItem,
   AlertController,
   LoadingController,
+  Platform,
 } from '@ionic/angular/standalone';
 import { AuthService } from '../../services/auth.service';
 import { AuthResponse } from '../../models/auth.interface';
@@ -74,7 +75,8 @@ export class LoginPage {
     private authService: AuthService,
     private localStorageService: LocalStorageService,
     private dbService: DatabaseService,
-    private syncDataService: SyncDataService
+    private syncDataService: SyncDataService,
+    private platform: Platform
   ) {
     addIcons({
       personCircleOutline,
@@ -127,6 +129,8 @@ export class LoginPage {
         const data = await this.authService.signInOffline(credentials);
         this.localStorageService.setItem('TOKEN', data.token);
         this.localStorageService.setItem('USER_ID', data.user.uuid);
+        await this.dbService.loadAllData();
+        await this.hideLoading();
         this.router.navigate(['/home']);
       } catch (error: any) {
         this.alert(error.message);
@@ -140,9 +144,12 @@ export class LoginPage {
     this.authService.getUserId(token).subscribe({
       next: (id) => {
         this.localStorageService.setItem('USER_ID', id);
-        // this.hideLoading();
-        // this.router.navigate(['/home']);
-        this.synchronizeData(id, this.password.value);
+        if (this.platform.is('cordova') || this.platform.is('capacitor')) {
+          this.synchronizeData(id, this.password.value);
+        } else {
+          this.hideLoading();
+          this.router.navigate(['/home']);
+        }
       },
       error: (error) => {
         this.localStorageService.clearStorage();
@@ -158,8 +165,10 @@ export class LoginPage {
       const syncLogs = this.dbService.getSyncLogList();
       const user = await this.dbService.getUserById(idUser);
       const passBasic = btoa(pass);
-      if (!user) {
+      if (!user?.password) {
+        await this.hideLoading();
         this.message = 'Descargando información requerida...';
+        await this.showLoading();
         if (syncLogs().length) {
           try {
             await this.syncDataService.newUserData(idUser, passBasic);
@@ -167,7 +176,7 @@ export class LoginPage {
             this.router.navigate(['/home']);
           } catch (error) {
             this.hideLoading();
-            this.alert('Error descargando la información');
+            this.alert('Error descargando la información, vuelve a intentar');
           }
         } else {
           try {
@@ -176,11 +185,12 @@ export class LoginPage {
             this.router.navigate(['/home']);
           } catch (error) {
             this.hideLoading();
-            this.alert('Error descargando la información');
+            this.alert('Error descargando la información, vuelve a intentar');
           }
         }
       } else {
         if (user.password === passBasic) {
+          await this.dbService.loadAllData();
           this.hideLoading();
           this.router.navigate(['/home']);
         } else {
@@ -188,11 +198,14 @@ export class LoginPage {
             await this.dbService.updateUserById(idUser, {
               password: passBasic,
             });
+            await this.dbService.loadAllData();
             this.hideLoading();
             this.router.navigate(['/home']);
           } catch (error) {
             this.hideLoading();
-            this.alert('Error actualizando la contraseña en la base de datos');
+            this.alert(
+              'Error actualizando la contraseña en la base de datos local'
+            );
           }
         }
       }
@@ -230,7 +243,6 @@ export class LoginPage {
         message: this.message,
       });
       await this.loading.present();
-      console.log(this.loading);
     }
   }
 

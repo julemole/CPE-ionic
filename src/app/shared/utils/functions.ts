@@ -32,33 +32,32 @@ export const convertFileToBase64String = (file: File) => {
   });
 }
 
-export const downloadAndSaveFile = async (img: {url: string, filename: string}): Promise<string> => {
+export const downloadAndSaveFile = async (file: {url: string, filename: string}): Promise<string> => {
   try {
-    // Descargar el archivo desde la URL
-    const response = await fetch(img.url);
+    const response = await fetch(file.url);
     if (!response.ok) {
       throw new Error('Error al descargar el archivo');
     }
     const blob = await response.blob();
 
-    // Convertir el archivo en base64 para almacenarlo
+    // Crear un lector de archivos
     const reader = new FileReader();
     reader.readAsDataURL(blob);
 
     return new Promise((resolve, reject) => {
       reader.onloadend = async () => {
         try {
+
           const base64data = reader.result as string;
+          console.log('BASE 6464646464646464646464664', file.filename, base64data)
 
-          // Verificar si la carpeta existe y crearla si no
-          await ensureDirectoryExists('images');
-
-          // Guardar el archivo en la ruta local del dispositivo
           const savedFile = await Filesystem.writeFile({
-            path: `images/${img.filename}`, // Puedes ajustar la carpeta según tu preferencia
-            data: base64data.split(',')[1], // Eliminar el prefijo de datos base64
-            directory: Directory.Data, // Puedes elegir Documents, Data o Cache
+            path: `${file.filename}`,
+            data: base64data.split(',')[1],
+            directory: Directory.Documents,
           });
+
+          console.log('Archivo guardado correctamente en la ruta:', savedFile.uri);
 
           // Devolver la ruta donde se guardó el archivo
           resolve(savedFile.uri);
@@ -77,18 +76,58 @@ export const downloadAndSaveFile = async (img: {url: string, filename: string}):
   }
 };
 
-// Función para asegurarse de que la carpeta existe
-const ensureDirectoryExists = async (path: string) => {
+export const saveFileInDevice = async (file: File): Promise<string> => {
   try {
-    await Filesystem.mkdir({
-      path,
-      directory: Directory.Data,
-      recursive: true, // Crear la carpeta de forma recursiva si no existe
+    // Crear un lector de archivos
+    const reader = new FileReader();
+
+    return new Promise((resolve, reject) => {
+      reader.onloadend = async () => {
+        try {
+          // Convertir el resultado del reader en base64
+          const base64data = reader.result as string;
+
+          // Guardar el archivo en la ruta local del dispositivo
+          const savedFile = await Filesystem.writeFile({
+            path: `documents/${file.name}`, // Carpeta donde guardas los archivos
+            data: base64data.split(',')[1], // Eliminar el prefijo de datos base64
+            directory: Directory.Documents, // Usar el directorio correcto
+          });
+
+          // Mostrar la ruta donde se guardó el archivo en la consola
+          console.log('Archivo guardado correctamente en la ruta:', savedFile.uri);
+
+          // Devolver la ruta donde se guardó el archivo
+          resolve(savedFile.uri);
+        } catch (error: any) {
+          reject(`Error guardando el archivo: ${error.message}`);
+        }
+      };
+
+      reader.onerror = () => {
+        reject('Error al leer el archivo');
+      };
+
+      // Convertir el archivo en base64
+      reader.readAsDataURL(file);
     });
-  } catch (error: any) {
-    // Ignorar el error si la carpeta ya existe
-    if (error.message !== 'Directory exists') {
-      throw error;
-    }
+  } catch (error) {
+    console.error('Error guardando el archivo', error);
+    throw error;
   }
 };
+
+
+export const loadSignatureImage = async (signaturePath: string): Promise<string | null> => {
+  try {
+    const readFile = await Filesystem.readFile({
+      path: signaturePath
+    });
+
+    return `data:image/png;base64,${readFile.data}`;
+  } catch (error) {
+    console.error('Error leyendo el archivo de firma:', error);
+    return null;
+  }
+}
+

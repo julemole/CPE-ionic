@@ -117,17 +117,29 @@ td:hover::after {
   text-align: center;
 }
 
-.error-alert .alert-message {
+.success-alert .alert-head {
+  .alert-title{
+    color: white;
+  }
+  background-color: var(--ion-color-primary);
+  text-align: center;
+}
+
+.error-alert .alert-message, .success-alert .alert-message {
   padding-top: 1rem !important;
   padding: 1rem;
   text-align: center;
 }
 
-.error-alert .alert-button-group {
+.error-alert .alert-button-group, .success-alert .alert-button-group {
   display: flex;
   justify-content: center;
 }
 
 .error-alert .alert-button {
   color: red;
+}
+
+.success-alert .alert-button {
+  color: var(--ion-color-primary);
 }

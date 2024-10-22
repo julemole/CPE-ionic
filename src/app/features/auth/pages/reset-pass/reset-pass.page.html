@@ -1,37 +1,75 @@
 <ion-content>
   <section class="main-container">
-    <app-banner-gov class="h-45"/>
+    <app-banner-gov class="h-45" />
     <article class="recover-ct">
       <ion-buttons slot="start" class="back-btn">
         <ion-back-button defaultHref="/recover-pass"></ion-back-button>
       </ion-buttons>
       <div class="form-section">
-        <small class="ion-text-center">Completa los campos para restaurar tu contraseña</small>
+        <small class="ion-text-center"
+          >Completa los campos para restaurar tu contraseña</small
+        >
         <form class="form-container">
           <div class="w-100">
-            <ion-input label="Usuario" label-placement="floating" fill="outline" type="text" [formControl]="username"
-              helperText="Escribe tu nombre de usuario" errorText="Campo obligatorio"
+            <ion-input
+              label="Usuario"
+              label-placement="floating"
+              fill="outline"
+              type="text"
+              [formControl]="username"
+              helperText="Escribe tu nombre de usuario"
+              errorText="Campo obligatorio"
             ></ion-input>
           </div>
           <div class="w-100">
-            <ion-input class="inp-style" label="Contraseña temporal" label-placement="floating" fill="outline" [type]="showTempPass ? 'text' : 'password'"
-              [formControl]="temporalPass" helperText="Escribe la contraseña temporal" errorText="Campo obligatorio"
+            <ion-input
+              class="inp-style"
+              label="Contraseña temporal"
+              label-placement="floating"
+              fill="outline"
+              [type]="showTempPass ? 'text' : 'password'"
+              [formControl]="temporalPass"
+              helperText="Escribe la contraseña temporal"
+              errorText="Campo obligatorio"
             >
               @if(showTempPass){
-                <ion-icon name="eye-off-outline" class="icon" (click)="showTempPassword()"></ion-icon>
+              <ion-icon
+                name="eye-off-outline"
+                class="icon"
+                (click)="showTempPassword()"
+              ></ion-icon>
               } @else {
-                <ion-icon name="eye-outline" class="icon" (click)="showTempPassword()"></ion-icon>
+              <ion-icon
+                name="eye-outline"
+                class="icon"
+                (click)="showTempPassword()"
+              ></ion-icon>
               }
             </ion-input>
           </div>
           <div class="w-100">
-            <ion-input class="inp-style" label="Nueva contraseña" label-placement="floating" fill="outline" [type]="showNewPass ? 'text' : 'password'"
-              [formControl]="newPass" helperText="Escribe tu nueva contraseña" errorText="Campo obligatorio"
+            <ion-input
+              class="inp-style"
+              label="Nueva contraseña"
+              label-placement="floating"
+              fill="outline"
+              [type]="showNewPass ? 'text' : 'password'"
+              [formControl]="newPass"
+              helperText="Escribe tu nueva contraseña"
+              errorText="Campo obligatorio"
             >
               @if(showNewPass){
-                <ion-icon name="eye-off-outline" class="icon" (click)="showNewPassword()"></ion-icon>
+              <ion-icon
+                name="eye-off-outline"
+                class="icon"
+                (click)="showNewPassword()"
+              ></ion-icon>
               } @else {
-                <ion-icon name="eye-outline" class="icon" (click)="showNewPassword()"></ion-icon>
+              <ion-icon
+                name="eye-outline"
+                class="icon"
+                (click)="showNewPassword()"
+              ></ion-icon>
               }
             </ion-input>
           </div>

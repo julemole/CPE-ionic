@@ -40,8 +40,6 @@ export class DatabaseService {
   private registerAnnexes: WritableSignal<RegisterAnnex[]> = signal<RegisterAnnex[]>([]);
   private registerEvidences: WritableSignal<RegisterEvidence[]> = signal<RegisterEvidence[]>([]);
 
-  // private image: WritableSignal<Image[]> = signal<Image[]>([]);
-
   async initilizPlugin() {
     this.db = await this.sqlite.createConnection(
       DB_USERS,
@@ -59,7 +57,6 @@ export class DatabaseService {
 
   async loadAllData() {
     await this.loadSyncLogs();
-    await this.loadUsers();
     await this.loadRoles();
     await this.loadUserRoles();
     await this.loadStateParametrics();
@@ -75,7 +72,6 @@ export class DatabaseService {
     // await this.loadSedes();
     // await this.loadSedesGroups();
     // await this.loadSedesGroupSedes();
-    // await this.loadZones();
     // await this.loadZoneUsers();
     // await this.loadZoneSedesGroups();
     // await this.loadRegisters();
@@ -448,26 +444,7 @@ export class DatabaseService {
     return result;
   }
 
-  async deleteSyncLogById(id: number) {
-    const query = `DELETE FROM sync_log WHERE id = ${id};`;
-    const result = await this.db.run(query);
-    this.loadSyncLogs();
-    return result;
-  }
-
   // CRUD Users
-
-  async loadUsers() {
-    const query = `
-      SELECT u.*, GROUP_CONCAT(r.name, ',') AS roles
-      FROM users u
-      LEFT JOIN user_roles ur ON u.uuid = ur.user_uuid
-      LEFT JOIN roles r ON ur.role_name = r.name
-      GROUP BY u.uuid;
-    `;
-    const users = await this.db.query(query);
-    this.user.set(users.values || []);
-  }
 
   async getUserById(uuid: string): Promise<User | null> {
     const query = `
@@ -521,7 +498,6 @@ export class DatabaseService {
     return result;
   }
 
-
   async updateUserById(uuid: string, updatedData: Partial<User>) {
     const query = `
       UPDATE users
@@ -554,14 +530,6 @@ export class DatabaseService {
     return result;
   }
 
-
-  async deleteUserById(uuid: string) {
-    const query = `DELETE FROM users WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadUsers();
-    return result;
-  }
-
   // CRUD Roles
 
   async loadRoles() {
@@ -579,24 +547,6 @@ export class DatabaseService {
     return result;
   }
 
-  // async updateRoleById(uuid: string, updatedData: Partial<Role>) {
-  //   const query = `
-  //     UPDATE roles
-  //     SET name = '${updatedData.name}'
-  //     WHERE uuid = '${uuid}';
-  //   `;
-  //   const result = await this.db.run(query);
-  //   this.loadRoles();
-  //   return result;
-  // }
-
-  async deleteRoleByName(name: string) {
-    const query = `DELETE FROM roles WHERE name = '${name}';`;
-    const result = await this.db.run(query);
-    this.loadRoles();
-    return result;
-  }
-
   // CRUD UserRoles
 
   async loadUserRoles() {
@@ -608,16 +558,6 @@ export class DatabaseService {
     const query = `
       INSERT INTO user_roles (user_uuid, role_name)
       VALUES ('${userUuid}', '${roleName}');
-    `;
-    const result = await this.db.run(query);
-    this.loadUserRoles();
-    return result;
-  }
-
-  async deleteUserRole(userUuid: string, roleName: string) {
-    const query = `
-      DELETE FROM user_roles
-      WHERE user_uuid = '${userUuid}' AND role_name = '${roleName}';
     `;
     const result = await this.db.run(query);
     this.loadUserRoles();
@@ -641,24 +581,6 @@ export class DatabaseService {
     return result;
   }
 
-  async updateStateParametricById(uuid: string, updatedData: Partial<StateParametric>) {
-    const query = `
-      UPDATE state_parametric
-      SET name = '${updatedData.name}'
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadStateParametrics();
-    return result;
-  }
-
-  async deleteStateParametricById(uuid: string) {
-    const query = `DELETE FROM state_parametric WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadStateParametrics();
-    return result;
-  }
-
   // CRUD Department
 
   async loadDepartments() {
@@ -676,26 +598,7 @@ export class DatabaseService {
     return result;
   }
 
-  async updateDepartmentById(uuid: string, updatedData: Partial<Parametric>) {
-    const query = `
-      UPDATE department
-      SET name = '${updatedData.name}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadDepartments();
-    return result;
-  }
-
-  async deleteDepartmentById(uuid: string) {
-    const query = `DELETE FROM department WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadDepartments();
-    return result;
-  }
-
-  // CRUD Department
+  // CRUD ALL Departments
 
   async loadAllDepartments() {
     const all_departments = await this.db.query('SELECT * FROM all_departments;');
@@ -712,30 +615,12 @@ export class DatabaseService {
     return result;
   }
 
-  async updateAllDepartmentById(uuid: string, updatedData: Partial<Parametric>) {
-    const query = `
-      UPDATE all_departments
-      SET name = '${updatedData.name}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadAllDepartments();
-    return result;
-  }
-
-  async deleteAllDepartmentById(uuid: string) {
-    const query = `DELETE FROM all_departments WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadAllDepartments();
-    return result;
-  }
-
   // CRUD Approach
 
   async loadApproaches() {
     const approaches = await this.db.query('SELECT * FROM approach;');
-    this.approaches.set(approaches.values || []);
+    return approaches.values || [];
+    // this.approaches.set(approaches.values || []);
   }
 
   async addApproach(approach: Partial<Parametric>) {
@@ -748,30 +633,12 @@ export class DatabaseService {
     return result;
   }
 
-  async updateApproachById(uuid: string, updatedData: Partial<Parametric>) {
-    const query = `
-      UPDATE approach
-      SET name = '${updatedData.name}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadApproaches();
-    return result;
-  }
-
-  async deleteApproachById(uuid: string) {
-    const query = `DELETE FROM approach WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadApproaches();
-    return result;
-  }
-
   // CRUD Activity
 
   async loadActivities() {
     const activities = await this.db.query('SELECT * FROM activity;');
-    this.activities.set(activities.values || []);
+    return activities.values || [];
+    // this.activities.set(activities.values || []);
   }
 
   async addActivity(activity: Partial<Parametric>) {
@@ -784,30 +651,12 @@ export class DatabaseService {
     return result;
   }
 
-  async updateActivityById(uuid: string, updatedData: Partial<Parametric>) {
-    const query = `
-      UPDATE activity
-      SET name = '${updatedData.name}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadActivities();
-    return result;
-  }
-
-  async deleteActivityById(uuid: string) {
-    const query = `DELETE FROM activity WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadActivities();
-    return result;
-  }
-
   // CRUD Subactivity
 
   async loadSubactivities() {
     const subactivities = await this.db.query('SELECT * FROM subactivity;');
-    this.subactivities.set(subactivities.values || []);
+    return subactivities.values || [];
+    // this.subactivities.set(subactivities.values || []);
   }
 
   async addSubactivity(subactivity: Partial<Parametric>) {
@@ -815,25 +664,6 @@ export class DatabaseService {
       INSERT INTO subactivity (uuid, name, status)
       VALUES ('${subactivity.uuid}', '${subactivity.name}', ${subactivity.status});
     `;
-    const result = await this.db.run(query);
-    this.loadSubactivities();
-    return result;
-  }
-
-  async updateSubactivityById(uuid: string, updatedData: Partial<Parametric>) {
-    const query = `
-      UPDATE subactivity
-      SET name = '${updatedData.name}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadSubactivities();
-    return result;
-  }
-
-  async deleteSubactivityById(uuid: string) {
-    const query = `DELETE FROM subactivity WHERE uuid = '${uuid}';`;
     const result = await this.db.run(query);
     this.loadSubactivities();
     return result;
@@ -856,25 +686,6 @@ export class DatabaseService {
     return result;
   }
 
-  async updateLocationById(uuid: string, updatedData: Partial<Parametric>) {
-    const query = `
-      UPDATE location
-      SET name = '${updatedData.name}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadLocations();
-    return result;
-  }
-
-  async deleteLocationById(uuid: string) {
-    const query = `DELETE FROM location WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadLocations();
-    return result;
-  }
-
   // CRUD Municipality
 
   async loadMunicipalities() {
@@ -892,25 +703,6 @@ export class DatabaseService {
     return result;
   }
 
-  async updateMunicipalityById(uuid: string, updatedData: Partial<Parametric>) {
-    const query = `
-      UPDATE municipality
-      SET name = '${updatedData.name}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadMunicipalities();
-    return result;
-  }
-
-  async deleteMunicipalityById(uuid: string) {
-    const query = `DELETE FROM municipality WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadMunicipalities();
-    return result;
-  }
-
   // CRUD Annex
 
   async loadAnnexes() {
@@ -918,39 +710,49 @@ export class DatabaseService {
     this.annexes.set(annexes.values || []);
   }
 
+  async getAnnexById(uuid: string): Promise<Annex | null> {
+    const query = `
+      SELECT *
+      FROM annex
+      WHERE uuid = ?;
+    `;
+
+    try {
+      const result = await this.db.query(query, [uuid]);
+
+      // Verificar si la consulta devolvió algún resultado
+      if (result && result.values && result.values.length > 0) {
+        return result.values[0]; // Retornar el primer anexo encontrado
+      }
+
+      return null; // Si no hay resultados, retornar null
+    } catch (error) {
+      console.error('Error al obtener el anexo por uuid:', error);
+      return null;
+    }
+  }
+
   async addAnnex(annex: Partial<Annex>) {
     const query = `
       INSERT INTO annex (uuid, name, description, date_created, file, is_synced, sync_action, status)
-      VALUES ('${annex.uuid}', '${annex.name}', '${annex.description}', '${annex.date_created}', '${annex.file}', ${annex.is_synced}, '${annex.sync_action}', ${annex.status});
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     `;
-    const result = await this.db.run(query);
-    this.loadAnnexes();
+
+    const params = [
+      annex.uuid || '',
+      annex.name || null,
+      annex.description || null,
+      annex.date_created || null,
+      annex.file || null,
+      annex.is_synced || 0,
+      annex.sync_action || null,
+      annex.status || 1
+    ];
+
+    const result = await this.db.run(query, params);
     return result;
   }
 
-  async updateAnnexById(uuid: string, updatedData: Partial<Annex>) {
-    const query = `
-      UPDATE annex
-      SET name = '${updatedData.name}',
-          description = '${updatedData.description}',
-          date_created = '${updatedData.date_created}',
-          file = '${updatedData.file}',
-          is_synced = ${updatedData.is_synced},
-          sync_action = '${updatedData.sync_action}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadAnnexes();
-    return result;
-  }
-
-  async deleteAnnexById(uuid: string) {
-    const query = `DELETE FROM annex WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadAnnexes();
-    return result;
-  }
 
   // CRUD Evidence
 
@@ -959,40 +761,48 @@ export class DatabaseService {
     this.evidences.set(evidences.values || []);
   }
 
+  async getEvidenceById(uuid: string): Promise<Evidence | null> {
+    const query = `
+      SELECT *
+      FROM evidence
+      WHERE uuid = ?;
+    `;
+
+    try {
+      const result = await this.db.query(query, [uuid]);
+
+      if (result && result.values && result.values.length > 0) {
+        return result.values[0]; // Retornar la primera evidencia encontrada
+      }
+
+      return null; // Si no hay resultados, retornar null
+    } catch (error) {
+      console.error('Error al obtener la evidencia por uuid:', error);
+      return null;
+    }
+  }
+
   async addEvidence(evidence: Partial<Evidence>) {
     const query = `
       INSERT INTO evidence (uuid, name, description, date_created, time_created, latitude, longitude, file, is_synced, sync_action, status)
-      VALUES ('${evidence.uuid}', '${evidence.name}', '${evidence.description}', '${evidence.date_created}', '${evidence.time_created}', '${evidence.latitude}', '${evidence.longitude}', '${evidence.file}', ${evidence.is_synced}, '${evidence.sync_action}', ${evidence.status});
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
-    const result = await this.db.run(query);
-    this.loadEvidences();
-    return result;
-  }
 
-  async updateEvidenceById(uuid: string, updatedData: Partial<Evidence>) {
-    const query = `
-      UPDATE evidence
-      SET name = '${updatedData.name}',
-          description = '${updatedData.description}',
-          date_created = '${updatedData.date_created}',
-          time_created = '${updatedData.time_created}',
-          latitude = ${updatedData.latitude},
-          longitude = ${updatedData.longitude},
-          file = '${updatedData.file}',
-          is_synced = ${updatedData.is_synced},
-          sync_action = '${updatedData.sync_action}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadEvidences();
-    return result;
-  }
+    const values = [
+      evidence.uuid || '',
+      evidence.name || null,
+      evidence.description || null,
+      evidence.date_created || null,
+      evidence.time_created || null,
+      evidence.latitude || null,
+      evidence.longitude || null,
+      evidence.file || null,
+      evidence.is_synced || 0,
+      evidence.sync_action || null,
+      evidence.status || 1
+    ];
 
-  async deleteEvidenceById(uuid: string) {
-    const query = `DELETE FROM evidence WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadEvidences();
+    const result = await this.db.run(query, values);
     return result;
   }
 
@@ -1021,34 +831,29 @@ export class DatabaseService {
     return result;
   }
 
-
-  async updateRegionById(uuid: string, updatedData: Partial<Region>) {
-    const query = `
-      UPDATE region
-      SET name = '${updatedData.name}',
-          date_created = '${updatedData.date_created}',
-          department_uuid = '${updatedData.department_uuid}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadRegions();
-    return result;
-  }
-
-  async deleteRegionById(uuid: string) {
-    const query = `DELETE FROM region WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadRegions();
-    return result;
-  }
-
   // CRUD Sede
 
   async loadSedes() {
     const sedes = await this.db.query('SELECT * FROM sedes;');
     this.sedes.set(sedes.values || []);
   }
+
+  async getSedeById(uuid: string): Promise<Sede | null> {
+    const query = `
+      SELECT *
+      FROM sedes
+      WHERE uuid = ?;
+    `;
+
+    try {
+      const result = await this.db.query(query, [uuid]);
+      return result?.values?.[0] || null;  // Retorna la primera sede o null si no encuentra
+    } catch (error) {
+      console.error('Error cargando la sede por uuid:', error);
+      return null;
+    }
+  }
+
 
   async addSede(sede: Partial<Sede>) {
     const query = `
@@ -1068,31 +873,6 @@ export class DatabaseService {
 
     const result = await this.db.run(query, values);
     // this.loadSedes();
-    return result;
-  }
-
-
-  async updateSedeById(uuid: string, updatedData: Partial<Sede>) {
-    const query = `
-      UPDATE sedes
-      SET name = '${updatedData.name}',
-          date_created = '${updatedData.date_created}',
-          department_uuid = '${updatedData.department_uuid}',
-          location_uuid = '${updatedData.location_uuid}',
-          municipality_uuid = '${updatedData.municipality_uuid}',
-          state_uuid = '${updatedData.state_uuid}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadSedes();
-    return result;
-  }
-
-  async deleteSedeById(uuid: string) {
-    const query = `DELETE FROM sedes WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadSedes();
     return result;
   }
 
@@ -1129,28 +909,6 @@ export class DatabaseService {
     return result;
   }
 
-
-  async updateSedesGroupById(uuid: string, updatedData: Partial<SedesGroup>) {
-    const query = `
-      UPDATE sedes_group
-      SET name = '${updatedData.name}',
-          date_created = '${updatedData.date_created}',
-          municipality_uuid = '${updatedData.municipality_uuid}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadSedesGroups();
-    return result;
-  }
-
-  async deleteSedesGroupById(uuid: string) {
-    const query = `DELETE FROM sedes_group WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadSedesGroups();
-    return result;
-  }
-
   // CRUD SedesGroupSede (Relación muchos a muchos)
 
   async loadSedesGroupSedes() {
@@ -1168,110 +926,87 @@ export class DatabaseService {
     return result;
   }
 
-  async deleteSedeFromSedesGroup(sedesGroupUuid: string, sedeUuid: string) {
-    const query = `
-      DELETE FROM sedes_group_sede
-      WHERE sedes_group_uuid = '${sedesGroupUuid}' AND sede_uuid = '${sedeUuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadSedesGroupSedes();
-    return result;
-  }
-
   // CRUD Zone
 
-  async loadZones() {
+  async loadZonesByUser(userUuid: string) {
     const query = `
-      SELECT z.*,
-            GROUP_CONCAT(DISTINCT u.username, ', ') AS users,
-            GROUP_CONCAT(DISTINCT sg.name, ', ') AS sedes_groups
+      SELECT
+        z.uuid AS zone_uuid, z.name AS zone_name, z.date_created AS zone_date_created, z.status AS zone_status,
+        z.region_uuid,
+        sg.uuid AS sedes_group_uuid, sg.name AS sedes_group_name, sg.date_created AS sedes_group_date_created,
+        m.name AS municipality_name,
+        r.name AS region_name,
+        s.uuid AS sede_uuid, s.name AS sede_name, s.date_created AS sede_date_created, s.status AS sede_status,
+        s.department_uuid, s.location_uuid, s.municipality_uuid, s.state_uuid
       FROM zone z
       LEFT JOIN zone_users zu ON z.uuid = zu.zone_uuid
-      LEFT JOIN users u ON zu.user_uuid = u.uuid
+      LEFT JOIN region r ON z.region_uuid = r.uuid
       LEFT JOIN zone_sedes_group zsg ON z.uuid = zsg.zone_uuid
       LEFT JOIN sedes_group sg ON zsg.sedes_group_uuid = sg.uuid
-      GROUP BY z.uuid;
+      LEFT JOIN municipality m ON sg.municipality_uuid = m.uuid
+      LEFT JOIN sedes_group_sede sgs ON sg.uuid = sgs.sedes_group_uuid
+      LEFT JOIN sedes s ON sgs.sede_uuid = s.uuid
+      WHERE zu.user_uuid = ?
+      ORDER BY z.uuid, sg.uuid, s.uuid;
     `;
-    const zones = await this.db.query(query);
-    this.zones.set(zones.values || []);
+
+    try {
+      const result = await this.db.query(query, [userUuid]);
+
+      // Estructurar la respuesta en un formato más adecuado
+      const zonesMap = new Map();
+
+      result?.values?.forEach(row => {
+        // Verificar si la zona ya está en el mapa
+        if (!zonesMap.has(row.zone_uuid)) {
+          zonesMap.set(row.zone_uuid, {
+            uuid: row.zone_uuid,
+            name: row.zone_name,
+            date_created: row.zone_date_created,
+            region: row.region_name,
+            status: row.zone_status,
+            sedes_groups: []
+          });
+        }
+
+        const zone = zonesMap.get(row.zone_uuid);
+
+        // Verificar si el grupo de sedes ya está en la zona
+        let sedesGroup = zone.sedes_groups.find((sg: any) => sg.uuid === row.sedes_group_uuid);
+        if (!sedesGroup) {
+          sedesGroup = {
+            uuid: row.sedes_group_uuid,
+            name: row.sedes_group_name,
+            date_created: row.sedes_group_date_created,
+            municipality: row.municipality_name,  // Añadir el nombre del municipio
+            sedes: []
+          };
+          zone.sedes_groups.push(sedesGroup);
+        }
+
+        // Agregar la sede al grupo de sedes
+        if (row.sede_uuid) {  // Verificar si hay sede asociada
+          sedesGroup.sedes.push({
+            uuid: row.sede_uuid,
+            name: row.sede_name,
+            date_created: row.sede_date_created,
+            status: row.sede_status,
+            department_uuid: row.department_uuid,
+            location_uuid: row.location_uuid,
+            municipality_uuid: row.municipality_uuid,
+            state_uuid: row.state_uuid
+          });
+        }
+      });
+
+      // Convertir el mapa de zonas en un arreglo
+      return Array.from(zonesMap.values());
+
+    } catch (error) {
+      console.error('Error cargando las zonas para el usuario:', error);
+      return [];
+    }
   }
-
-  async loadZonesByUser(userUuid: string) {
-  const query = `
-    SELECT
-      z.uuid AS zone_uuid, z.name AS zone_name, z.date_created AS zone_date_created, z.status AS zone_status,
-      sg.uuid AS sedes_group_uuid, sg.name AS sedes_group_name, sg.date_created AS sedes_group_date_created,
-      m.name AS municipality_name,  -- Traemos el nombre del municipio
-      s.uuid AS sede_uuid, s.name AS sede_name, s.date_created AS sede_date_created, s.status AS sede_status,
-      s.department_uuid, s.location_uuid, s.municipality_uuid, s.state_uuid
-    FROM zone z
-    LEFT JOIN zone_users zu ON z.uuid = zu.zone_uuid
-    LEFT JOIN zone_sedes_group zsg ON z.uuid = zsg.zone_uuid
-    LEFT JOIN sedes_group sg ON zsg.sedes_group_uuid = sg.uuid
-    LEFT JOIN municipality m ON sg.municipality_uuid = m.uuid  -- Hacemos JOIN con la tabla municipality
-    LEFT JOIN sedes_group_sede sgs ON sg.uuid = sgs.sedes_group_uuid
-    LEFT JOIN sedes s ON sgs.sede_uuid = s.uuid
-    WHERE zu.user_uuid = ?
-    ORDER BY z.uuid, sg.uuid, s.uuid;
-  `;
-
-  try {
-    const result = await this.db.query(query, [userUuid]);
-
-    // Estructurar la respuesta en un formato más adecuado
-    const zonesMap = new Map();
-
-    result?.values?.forEach(row => {
-      // Verificar si la zona ya está en el mapa
-      if (!zonesMap.has(row.zone_uuid)) {
-        zonesMap.set(row.zone_uuid, {
-          uuid: row.zone_uuid,
-          name: row.zone_name,
-          date_created: row.zone_date_created,
-          status: row.zone_status,
-          sedes_groups: []
-        });
-      }
-
-      const zone = zonesMap.get(row.zone_uuid);
-
-      // Verificar si el grupo de sedes ya está en la zona
-      let sedesGroup = zone.sedes_groups.find((sg: any) => sg.uuid === row.sedes_group_uuid);
-      if (!sedesGroup) {
-        sedesGroup = {
-          uuid: row.sedes_group_uuid,
-          name: row.sedes_group_name,
-          date_created: row.sedes_group_date_created,
-          municipality: row.municipality_name,  // Añadir el nombre del municipio
-          sedes: []
-        };
-        zone.sedes_groups.push(sedesGroup);
-      }
-
-      // Agregar la sede al grupo de sedes
-      if (row.sede_uuid) {  // Verificar si hay sede asociada
-        sedesGroup.sedes.push({
-          uuid: row.sede_uuid,
-          name: row.sede_name,
-          date_created: row.sede_date_created,
-          status: row.sede_status,
-          department_uuid: row.department_uuid,
-          location_uuid: row.location_uuid,
-          municipality_uuid: row.municipality_uuid,
-          state_uuid: row.state_uuid
-        });
-      }
-    });
-
-    // Convertir el mapa de zonas en un arreglo
-    return Array.from(zonesMap.values());
-
-  } catch (error) {
-    console.error('Error cargando las zonas para el usuario:', error);
-    return [];
-  }
-  }
-
 
   async addZone(zone: Partial<Zone>) {
     const query = `
@@ -1293,29 +1028,6 @@ export class DatabaseService {
     return result;
   }
 
-  async updateZoneById(uuid: string, updatedData: Partial<Zone>) {
-    const query = `
-      UPDATE zone
-      SET name = '${updatedData.name}',
-          date_created = '${updatedData.date_created}',
-          department_uuid = '${updatedData.department_uuid}',
-          region_uuid = '${updatedData.region_uuid}',
-          state_uuid = '${updatedData.state_uuid}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadZones();
-    return result;
-  }
-
-  async deleteZoneById(uuid: string) {
-    const query = `DELETE FROM zone WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadZones();
-    return result;
-  }
-
   // CRUD ZoneUsers
 
   async loadZoneUsers() {
@@ -1333,16 +1045,6 @@ export class DatabaseService {
     return result;
   }
 
-  async deleteUserFromZone(zoneUuid: string, userUuid: string) {
-    const query = `
-      DELETE FROM zone_users
-      WHERE zone_uuid = '${zoneUuid}' AND user_uuid = '${userUuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadZoneUsers();
-    return result;
-  }
-
   // CRUD ZoneSedesGroup
 
   async loadZoneSedesGroups() {
@@ -1357,16 +1059,6 @@ export class DatabaseService {
     `;
     const result = await this.db.run(query);
     // this.loadZoneSedesGroups();
-    return result;
-  }
-
-  async deleteSedesGroupFromZone(zoneUuid: string, sedesGroupUuid: string) {
-    const query = `
-      DELETE FROM zone_sedes_group
-      WHERE zone_uuid = '${zoneUuid}' AND sedes_group_uuid = '${sedesGroupUuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadZoneSedesGroups();
     return result;
   }
 
@@ -1388,18 +1080,87 @@ export class DatabaseService {
     this.registers.set(registers.values || []);
   }
 
-  async getRegistersByUser(userUuid: string) {
+  async getRegisterById(uuid: string): Promise<Register | null> {
     const query = `
       SELECT r.*,
-             GROUP_CONCAT(DISTINCT a.name) AS annexes,
-             GROUP_CONCAT(DISTINCT e.name) AS evidences
+             a.uuid AS annex_uuid, a.name AS annex_name, a.description AS annex_description, a.file AS annex_file,
+             e.uuid AS evidence_uuid, e.name AS evidence_name, e.description AS evidence_description, e.file AS evidence_file,
+             r.signature_file
       FROM register r
       LEFT JOIN register_annex ra ON r.uuid = ra.register_uuid
       LEFT JOIN annex a ON ra.annex_uuid = a.uuid
       LEFT JOIN register_evidence re ON r.uuid = re.register_uuid
       LEFT JOIN evidence e ON re.evidence_uuid = e.uuid
+      WHERE r.uuid = ?
+    `;
+
+    try {
+      const result = await this.db.query(query, [uuid]);
+
+      if (result && result.values && result?.values?.length > 0) {
+        const register = result.values[0];
+
+        // Inicializar sets para controlar duplicados
+        const annexSet = new Set();
+        const evidenceSet = new Set();
+
+        // Inicializar listas vacías
+        const annexList: Array<any> = [];
+        const evidenceList: Array<any> = [];
+
+        // Recorrer filas para construir anexos y evidencias
+        result.values.forEach((row: any) => {
+          if (row.annex_uuid && !annexSet.has(row.annex_uuid)) {
+            annexSet.add(row.annex_uuid);
+            annexList.push({
+              uuid: row.annex_uuid,
+              name: row.annex_name,
+              description: row.annex_description,
+              file: row.annex_file
+            });
+          }
+
+          if (row.evidence_uuid && !evidenceSet.has(row.evidence_uuid)) {
+            evidenceSet.add(row.evidence_uuid);
+            evidenceList.push({
+              uuid: row.evidence_uuid,
+              name: row.evidence_name,
+              description: row.evidence_description,
+              file: row.evidence_file
+            });
+          }
+        });
+
+        // Retornar registro con anexos y evidencias únicos
+        return {
+          ...register,
+          annexList,
+          evidenceList,
+          signature_file: register.signature_file
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error al obtener el registro por uuid:', error);
+      return null;
+    }
+  }
+
+  async getRegistersByUser(userUuid: string) {
+    const query = `
+      SELECT r.*,
+             GROUP_CONCAT(DISTINCT a.name) AS annexes,
+             GROUP_CONCAT(DISTINCT e.name) AS evidences,
+             s.name AS sede_name
+      FROM register r
+      LEFT JOIN register_annex ra ON r.uuid = ra.register_uuid
+      LEFT JOIN annex a ON ra.annex_uuid = a.uuid
+      LEFT JOIN register_evidence re ON r.uuid = re.register_uuid
+      LEFT JOIN evidence e ON re.evidence_uuid = e.uuid
+      LEFT JOIN sedes s ON r.sede_uuid = s.uuid  -- Hacemos JOIN con la tabla de sedes
       WHERE r.user_uuid = ?
-      GROUP BY r.uuid;
+      GROUP BY r.uuid, s.name;
     `;
 
     try {
@@ -1409,7 +1170,8 @@ export class DatabaseService {
       console.error('Error al obtener los registros por usuario:', error);
       return [];
     }
-  }
+}
+
 
   async addRegister(register: Partial<Register>) {
     const query = `
@@ -1436,33 +1198,6 @@ export class DatabaseService {
     return result;
   }
 
-  async updateRegisterById(uuid: string, updatedData: Partial<Register>) {
-    const query = `
-      UPDATE register
-      SET name = '${updatedData.name}',
-          date_created = '${updatedData.date_created}',
-          signature_file = '${updatedData.signature_file}',
-          approach_uuid = '${updatedData.approach_uuid}',
-          activity_uuid = '${updatedData.activity_uuid}',
-          subactivity_uuid = '${updatedData.subactivity_uuid}',
-          sede_uuid = '${updatedData.sede_uuid}',
-          is_synced = ${updatedData.is_synced},
-          sync_action = '${updatedData.sync_action}',
-          status = ${updatedData.status}
-      WHERE uuid = '${uuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadRegisters();
-    return result;
-  }
-
-  async deleteRegisterById(uuid: string) {
-    const query = `DELETE FROM register WHERE uuid = '${uuid}';`;
-    const result = await this.db.run(query);
-    this.loadRegisters();
-    return result;
-  }
-
   // CRUD RegisterAnnex
 
   async loadRegisterAnnexes() {
@@ -1476,17 +1211,6 @@ export class DatabaseService {
       VALUES ('${registerUuid}', '${annexUuid}');
     `;
     const result = await this.db.run(query);
-    // this.loadRegisterAnnexes();
-    return result;
-  }
-
-  async deleteAnnexFromRegister(registerUuid: string, annexUuid: string) {
-    const query = `
-      DELETE FROM register_annex
-      WHERE register_uuid = '${registerUuid}' AND annex_uuid = '${annexUuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadRegisterAnnexes();
     return result;
   }
 
@@ -1503,17 +1227,6 @@ export class DatabaseService {
       VALUES ('${registerUuid}', '${evidenceUuid}');
     `;
     const result = await this.db.run(query);
-    // this.loadRegisterEvidences();
-    return result;
-  }
-
-  async deleteEvidenceFromRegister(registerUuid: string, evidenceUuid: string) {
-    const query = `
-      DELETE FROM register_evidence
-      WHERE register_uuid = '${registerUuid}' AND evidence_uuid = '${evidenceUuid}';
-    `;
-    const result = await this.db.run(query);
-    this.loadRegisterEvidences();
     return result;
   }
 

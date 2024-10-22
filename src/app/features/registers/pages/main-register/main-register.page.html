@@ -1,11 +1,11 @@
 <ion-header [translucent]="true">
   <ion-toolbar class="toolbar">
     <ion-buttons slot="start">
-      <ion-back-button [defaultHref]="idRegister ? '/registers/me' : '/registers/add/select-institution'"></ion-back-button>
+      <ion-back-button
+        [defaultHref]="idRegister ? '/registers/me' : '/registers/add/select-institution'"
+      ></ion-back-button>
     </ion-buttons>
-    <ion-title>
-      Nuevo registro
-    </ion-title>
+    <ion-title> Nuevo registro </ion-title>
     <ion-buttons slot="start">
       <ion-button>
         <ion-icon name="document-text-outline"></ion-icon>
@@ -17,39 +17,65 @@
 <ion-content [fullscreen]="true">
   <ion-header>
     <ion-toolbar class="second-toolbar">
-      <ion-title class="title">{{institution?.attributes?.title || 'Luis Carlos Galan'}}</ion-title>
+      <ion-title class="title"
+        >{{institution?.attributes?.title || institution?.name || 'No se encontró la institución'}}</ion-title
+      >
     </ion-toolbar>
   </ion-header>
   <form [formGroup]="registerForm" class="form-container">
     <section class="ion-padding-horizontal ion-padding-top">
       <div class="ion-margin-bottom">
-        <ion-select label="Enfoque" formControlName="approach" label-placement="floating" fill="outline" placeholder="Seleccione una opción">
-          @for(approach of approachList; track approach.id){
-            <ion-select-option [value]="approach.id">{{approach.attributes.name}}</ion-select-option>
+        <ion-select
+          label="Enfoque"
+          formControlName="approach"
+          label-placement="floating"
+          fill="outline"
+          placeholder="Seleccione una opción"
+        >
+          @for(approach of approachList; track approach.id || approach.uuid){
+            <ion-select-option [value]="approach.id || approach.uuid"
+              >{{approach?.attributes?.name || approach?.name}}</ion-select-option
+            >
           }
         </ion-select>
         @if(approach.invalid && (approach.dirty || approach.touched)){
-          <small class="error-message">Seleccione un enfoque</small>
+        <small class="error-message">Seleccione un enfoque</small>
         }
       </div>
       <div class="ion-margin-bottom">
-        <ion-select label="Actividad" formControlName="activity" label-placement="floating" fill="outline" placeholder="Seleccione una opción">
-          @for(activity of activitiesList; track activity.id){
-            <ion-select-option [value]="activity.id">{{activity.attributes.name}}</ion-select-option>
+        <ion-select
+          label="Actividad"
+          formControlName="activity"
+          label-placement="floating"
+          fill="outline"
+          placeholder="Seleccione una opción"
+        >
+          @for(activity of activitiesList; track activity.id || activity.uuid){
+            <ion-select-option [value]="activity.id || activity.uuid"
+              >{{activity?.attributes?.name || activity?.name}}</ion-select-option
+            >
           }
         </ion-select>
         @if(activity.invalid && (activity.dirty || activity.touched)){
-          <small class="error-message">Seleccione una actividad</small>
+        <small class="error-message">Seleccione una actividad</small>
         }
       </div>
       <div>
-        <ion-select label="Subactividad" formControlName="subactivity" label-placement="floating" fill="outline" placeholder="Seleccione una opción">
-          @for(subactivity of subactivitiesList; track subactivity.id){
-            <ion-select-option [value]="subactivity.id">{{subactivity.attributes.name}}</ion-select-option>
+        <ion-select
+          label="Subactividad"
+          formControlName="subactivity"
+          label-placement="floating"
+          fill="outline"
+          placeholder="Seleccione una opción"
+        >
+          @for(subactivity of subactivitiesList; track subactivity.id || subactivity.uuid){
+            <ion-select-option [value]="subactivity.id || subactivity.uuid"
+              >{{subactivity?.attributes?.name || subactivity?.name}}</ion-select-option
+            >
           }
         </ion-select>
         @if(subactivity.invalid && (subactivity.dirty || subactivity.touched)){
-          <small class="error-message">Seleccione una subactividad</small>
+        <small class="error-message">Seleccione una subactividad</small>
         }
       </div>
     </section>
@@ -59,72 +85,95 @@
     <ion-item lines="none">
       <ion-label class="title-subsect">Evidencias Fotográficas</ion-label>
     </ion-item>
-    @if(idRegister){
-      @for(evidence of (registerContent?.evidenceList); track evidence.id){
-        <ion-item class="item" lines="none">
-          <ion-icon name="camera-outline" slot="start" color="primary"></ion-icon>
-          <ion-label class="list-item" [routerLink]="['photo', evidence.id]">{{ evidence.attributes.title }}</ion-label>
-        </ion-item>
-      } @empty {
-        <ion-item class="item" lines="none">
-          <ion-label>Sin evidencias fotográficas</ion-label>
-        </ion-item>
-      }
-    } @else if(idInstitution){
-      @for(evidence of photoData(); track evidence.id){
-        <ion-item class="item" lines="none">
-          <ion-icon name="camera-outline" slot="start" color="primary"></ion-icon>
-          <ion-label class="list-item" [routerLink]="['photo', evidence.id]">{{ evidence.name }}</ion-label>
-          <ion-button slot="end" fill="clear" (click)="removePhoto(evidence.id)">
-            <ion-icon name="trash-outline" slot="icon-only" color="primary"></ion-icon>
-          </ion-button>
-        </ion-item>
-      } @empty {
-        <ion-item class="item" lines="none">
-          <ion-label>Sin evidencias fotográficas</ion-label>
-        </ion-item>
-      }
-    }
+    @if(idRegister && registerContent?.evidenceList){ @for(evidence of (registerContent?.evidenceList); track
+    evidence.id || evidence.uuid){
+    <ion-item class="item" lines="none">
+      <ion-icon name="camera-outline" slot="start" color="primary"></ion-icon>
+      <ion-label class="list-item" [routerLink]="['photo', evidence.id || evidence.uuid]"
+        >{{ evidence?.attributes?.title || evidence?.name }}</ion-label
+      >
+    </ion-item>
+    } @empty {
+    <ion-item class="item" lines="none">
+      <ion-label>Sin evidencias fotográficas</ion-label>
+    </ion-item>
+    } } @else if(idInstitution){ @for(evidence of photoData(); track
+    evidence.id){
+    <ion-item class="item" lines="none">
+      <ion-icon name="camera-outline" slot="start" color="primary"></ion-icon>
+      <ion-label class="list-item" [routerLink]="['photo', evidence.id]"
+        >{{ evidence.name }}</ion-label
+      >
+      <ion-button slot="end" fill="clear" (click)="removePhoto(evidence.id)">
+        <ion-icon
+          name="trash-outline"
+          slot="icon-only"
+          color="primary"
+        ></ion-icon>
+      </ion-button>
+    </ion-item>
+    } @empty {
+    <ion-item class="item" lines="none">
+      <ion-label>Sin evidencias fotográficas</ion-label>
+    </ion-item>
+    } }
   </ion-list>
 
   <ion-list>
     <ion-item lines="none">
       <ion-label class="title-subsect">Anexos</ion-label>
     </ion-item>
-    @if(idRegister){
-      @for(attached of registerContent?.annexList; track attached.id){
-        <ion-item class="item" lines="none">
-          <ion-icon name="document-attach-outline" slot="start" color="primary"></ion-icon>
-          <ion-label class="list-item" [routerLink]="['attached', attached.id]">{{ attached.attributes.title }}</ion-label>
-        </ion-item>
-      } @empty {
-        <ion-item class="item" lines="none">
-          <ion-label>Sin anexos</ion-label>
-        </ion-item>
-      }
-    } @else if(idInstitution){
-      @for(attached of attachedData(); track attached.id){
-        <ion-item class="item" lines="none">
-          <ion-icon name="document-attach-outline" slot="start" color="primary"></ion-icon>
-          <ion-label class="list-item" [routerLink]="['attached', attached.id]">{{ attached.name }}</ion-label>
-          <ion-button slot="end" fill="clear" (click)="removeAttached(attached.id)">
-            <ion-icon name="trash-outline" slot="icon-only" color="primary"></ion-icon>
-          </ion-button>
-        </ion-item>
-      } @empty {
-        <ion-item class="item" lines="none">
-          <ion-label>Sin anexos</ion-label>
-        </ion-item>
-      }
-    }
+    @if(idRegister && registerContent?.annexList){
+    @for(attached of registerContent?.annexList; track attached.id || attached.uuid){
+    <ion-item class="item" lines="none">
+      <ion-icon
+        name="document-attach-outline"
+        slot="start"
+        color="primary"
+      ></ion-icon>
+      <ion-label class="list-item" [routerLink]="['attached', attached.id || attached.uuid]"
+        >{{ attached?.attributes?.title || attached?.name }}</ion-label
+      >
+    </ion-item>
+    } @empty {
+    <ion-item class="item" lines="none">
+      <ion-label>Sin anexos</ion-label>
+    </ion-item>
+    } } @else if(idInstitution){ @for(attached of attachedData(); track
+    attached.id){
+    <ion-item class="item" lines="none">
+      <ion-icon
+        name="document-attach-outline"
+        slot="start"
+        color="primary"
+      ></ion-icon>
+      <ion-label class="list-item" [routerLink]="['attached', attached.id]"
+        >{{ attached.name }}</ion-label
+      >
+      <ion-button slot="end" fill="clear" (click)="removeAttached(attached.id)">
+        <ion-icon
+          name="trash-outline"
+          slot="icon-only"
+          color="primary"
+        ></ion-icon>
+      </ion-button>
+    </ion-item>
+    } @empty {
+    <ion-item class="item" lines="none">
+      <ion-label>Sin anexos</ion-label>
+    </ion-item>
+    } }
   </ion-list>
   @if(idRegister){
-    <ion-list>
-      <ion-item lines="none">
-        <ion-label class="title-subsect">Firma</ion-label>
-      </ion-item>
-      <img class="ion-margin-horizontal" [src]="registerContent?.signature?.url" alt="firma">
-    </ion-list>
+  <ion-list>
+    <ion-item lines="none">
+      <ion-label class="title-subsect">Firma</ion-label>
+    </ion-item>
+    <img
+      class="ion-margin-horizontal"
+      [src]="registerContent?.signature?.url || imgUrl || ''"
+      alt="firma"
+    />
+  </ion-list>
   }
 </ion-content>
-

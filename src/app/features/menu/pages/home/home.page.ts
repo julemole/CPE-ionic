@@ -20,11 +20,25 @@ export class HomePage {
 
   constructor(private dbService: DatabaseService, private nodeService: NodesService) {
     addIcons({personCircleOutline,settingsOutline,documentTextOutline,addCircleOutline});
-    nodeService.getRegisterList('a5ec6590-4eaf-4b26-ba28-a05d71a73bcf').subscribe({
+    nodeService.getAnnexList('aaf52c55-48fb-4422-886e-217ed6efebd3').subscribe({
       next: (data) => {
         console.log(data);
       }
     })
+    this.popo()
+  }
+
+  async popo() {
+    const data = await fetch('https://www.tutores.co/sites/default/files/2024-10/top.png')
+    const blob = await data.blob();
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = async () => {
+      const base64data = reader.result as string;
+      console.log(base64data.split(',')[1])
+      console.log(base64data)
+    }
+    console.log(blob)
   }
 
 }

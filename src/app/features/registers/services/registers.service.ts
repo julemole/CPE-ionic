@@ -1,10 +1,13 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Platform } from '@ionic/angular/standalone';
 import { firstValueFrom, map, Observable } from 'rxjs';
 import { PhotoData } from 'src/app/shared/models/save-in-session.interface';
 import { environment } from 'src/environments/environment';
 import { attachedData } from '../../../shared/models/save-in-session.interface';
 import { DatabaseService } from 'src/app/shared/services/database.service';
+import { Annex, Evidence, Register } from 'src/app/shared/models/entity.interface';
+import { saveFileInDevice } from 'src/app/shared/utils/functions';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +17,7 @@ export class RegistersService {
   private API_URL = environment.apiUrl;
   private HOST = environment.host;
 
-  constructor(private http: HttpClient, private dbService: DatabaseService) { }
+  constructor(private http: HttpClient, private plaftorm: Platform, private dbService: DatabaseService) { }
 
   getRegistersByUser(userId: string): Observable<any> {
     const params = new HttpParams()
@@ -86,6 +89,15 @@ export class RegistersService {
     );
   }
 
+  async getRegisterByIdOffline(id: string) {
+    try {
+      const register = await this.dbService.getRegisterById(id);
+      return register;
+    } catch (error) {
+      throw new Error('Error al obtener el registro');
+    }
+  }
+
   getEvidenceById(id: string): Observable<any> {
     const params = new HttpParams()
       .set('fields[node--evidence]', 'title,field_description,field_evidence_date,field_evidence_time,field_latitude,field_longitude,field_image')
@@ -105,6 +117,15 @@ export class RegistersService {
     );
   }
 
+  async getEvidenceByIdOffline(id: string) {
+    try {
+      const evidence = await this.dbService.getEvidenceById(id);
+      return evidence;
+    } catch (error) {
+      throw new Error('Error al obtener la evidencia');
+    }
+  }
+
   getAnnexById(id: string): Observable<any> {
     const params = new HttpParams()
       .set('fields[node--annex]', 'title,field_description,field_file')
@@ -122,6 +143,15 @@ export class RegistersService {
         return data;
       })
     );
+  }
+
+  async getAnnexByIdOffline(id: string) {
+    try {
+      const annex = await this.dbService.getAnnexById(id);
+      return annex;
+    } catch (error) {
+      throw new Error('Error al obtener el anexo');
+    }
   }
 
   getInstitutionById(id: string): Observable<any> {
@@ -193,7 +223,6 @@ export class RegistersService {
   }
 
   async createEvidence(photoData: PhotoData, csrfToken: string) {
-    console.log('objeto',photoData)
     const payload = {
       data: {
         type: 'node--evidence',
@@ -227,7 +256,39 @@ export class RegistersService {
     try {
       const response = await firstValueFrom(this.http.post<any>(URL, payload, httpOptions));
       photoData.idEvidence = response.data.id;
+      if (this.plaftorm.is('cordova') || this.plaftorm.is('capacitor')) {
+        let filePath = '';
+        if(photoData.file){
+          filePath = await saveFileInDevice(photoData.file);
+        }
+        const evidence: Evidence = {
+          uuid: response.data.id,
+          name: photoData.name,
+          description: photoData.description,
+          date_created: photoData.date,
+          time_created: photoData.time,
+          latitude: photoData.latitude,
+          longitude: photoData.longitude,
+          file: filePath,
+          is_synced: 1,
+          status: 1,
+        }
+        await this.dbService.addEvidence(evidence);
+      }
+
       return response;
+    } catch (error) {
+      console.error('Error al crear la evidencia:', error);
+      throw error;
+    }
+  }
+
+  async createEvidenceOffline(evidence: Evidence) {
+    try {
+      const uuid = evidence.uuid || crypto.randomUUID();
+      evidence.uuid = uuid;
+      await this.dbService.addEvidence(evidence);
+      return evidence;
     } catch (error) {
       console.error('Error al crear la evidencia:', error);
       throw error;
@@ -266,7 +327,34 @@ export class RegistersService {
     try {
       const response = await firstValueFrom(this.http.post<any>(URL, payload, httpOptions));
       attachedData.idAnnex = response.data.id;
+      if (this.plaftorm.is('cordova') || this.plaftorm.is('capacitor')) {
+        let filePath = '';
+        if(attachedData.file){
+          filePath = await saveFileInDevice(attachedData.file);
+        }
+        const annex: Annex = {
+          uuid: response.data.id,
+          name: attachedData.name,
+          description: attachedData.description,
+          file: filePath,
+          is_synced: 1,
+          status: 1,
+        }
+        await this.dbService.addAnnex(annex);
+      }
       return response;
+    } catch (error) {
+      console.error('Error al crear el anexo:', error);
+      throw error;
+    }
+  }
+
+  async createAnnexOffline(annex: Annex) {
+    try {
+      const uuid = annex.uuid || crypto.randomUUID();
+      annex.uuid = uuid;
+      await this.dbService.addAnnex(annex);
+      return annex;
     } catch (error) {
       console.error('Error al crear el anexo:', error);
       throw error;
@@ -283,5 +371,39 @@ export class RegistersService {
       }),
     };
     return this.http.post(URL, registerPayload, httpOptions);
+  }
+
+  async createRegisterOffline(register: Register) {
+    try {
+      const uuid = register.uuid || crypto.randomUUID();
+      register.uuid = uuid;
+      await this.dbService.addRegister(register);
+      return register;
+    } catch (error) {
+      console.error('Error al crear el registro:', error);
+      throw error;
+    }
+  }
+
+  async addEvidenceToRegister(registerId: string, evidenceId?: string) {
+    try {
+      if(evidenceId){
+        await this.dbService.addEvidenceToRegister(registerId, evidenceId);
+      }
+    } catch (error) {
+      console.error('Error al agregar la evidencia al registro:', error);
+      throw error;
+    }
+  }
+
+  async addAnnexToRegister(registerId: string, annexId?: string) {
+    try {
+      if(annexId){
+        await this.dbService.addAnnexToRegister(registerId, annexId);
+      }
+    } catch (error) {
+      console.error('Error al agregar el anexo al registro:', error);
+      throw error;
+    }
   }
 }

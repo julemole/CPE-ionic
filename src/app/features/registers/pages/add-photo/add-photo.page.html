@@ -1,7 +1,9 @@
 <ion-header [translucent]="true">
   <ion-toolbar class="toolbar">
     <ion-buttons slot="start">
-      <ion-back-button [defaultHref]="idRegister ? '/registers/' + idRegister : '/registers/add/select-institution/' + institutionId"></ion-back-button>
+      <ion-back-button
+        [defaultHref]="idRegister ? '/registers/' + idRegister : '/registers/add/select-institution/' + institutionId"
+      ></ion-back-button>
     </ion-buttons>
     <ion-title>Evidencia fotográfica</ion-title>
     <ion-buttons slot="start">
@@ -27,16 +29,20 @@
             Cargar foto
           </ion-button>
           @if(!photoId){
-            <input
-              title="Cargar foto"
-              type="file"
-              class="file-input"
-              (change)="onFileSelected($event)"
-              accept=".jpg, .jpeg, .png, .svg"
-            />
+          <input
+            title="Cargar foto"
+            type="file"
+            class="file-input"
+            (change)="onFileSelected($event)"
+            accept=".jpg, .jpeg, .png, .svg"
+          />
           }
         </div>
-        <ion-button expand="block" (click)="captureImage()" [disabled]="photoId">
+        <ion-button
+          expand="block"
+          (click)="captureImage()"
+          [disabled]="photoId"
+        >
           <ion-icon slot="start" name="camera"></ion-icon>
           Tomar foto
         </ion-button>
@@ -87,8 +93,8 @@
           expand="block"
           [disabled]="!photoForm.valid || !imageSrc || photoId"
         >
-          <ion-icon slot="start" name="camera" ></ion-icon>
-           Guardar evidencia
+          <ion-icon slot="start" name="camera"></ion-icon>
+          Guardar evidencia
         </ion-button>
       </div>
     </form>

@@ -1,7 +1,34 @@
-import { Component, inject, OnInit, signal, WritableSignal } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonGrid, IonCol, IonRow, IonTextarea, IonThumbnail, IonInput, IonButton, IonIcon } from '@ionic/angular/standalone';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import {
+  IonContent,
+  IonHeader,
+  IonTitle,
+  IonToolbar,
+  IonButtons,
+  IonBackButton,
+  IonGrid,
+  IonCol,
+  IonRow,
+  IonTextarea,
+  IonThumbnail,
+  IonInput,
+  IonButton,
+  IonIcon,
+} from '@ionic/angular/standalone';
 import { ActivatedRoute, RouterLinkWithHref } from '@angular/router';
 import { CameraService } from 'src/app/shared/services/camera.service';
 import { SaveInSessionService } from 'src/app/shared/services/save-in-session.service';
@@ -9,16 +36,35 @@ import { addIcons } from 'ionicons';
 import { camera, cloudUpload } from 'ionicons/icons';
 import { PhotoData } from 'src/app/shared/models/save-in-session.interface';
 import { RegistersService } from '../../services/registers.service';
+import { ConnectivityService } from '../../../../shared/services/connectivity.service';
 
 @Component({
   selector: 'app-add-photo',
   templateUrl: './add-photo.page.html',
   styleUrls: ['./add-photo.page.scss'],
   standalone: true,
-  imports: [IonIcon, IonButton, IonInput, IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonThumbnail, IonGrid, IonCol, IonRow, IonTextarea, CommonModule, ReactiveFormsModule, RouterLinkWithHref]
-
+  imports: [
+    IonIcon,
+    IonButton,
+    IonInput,
+    IonContent,
+    IonHeader,
+    IonTitle,
+    IonToolbar,
+    IonButtons,
+    IonBackButton,
+    IonThumbnail,
+    IonGrid,
+    IonCol,
+    IonRow,
+    IonTextarea,
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLinkWithHref,
+  ],
 })
 export class AddPhotoPage implements OnInit {
+  isOnline: WritableSignal<boolean> = signal(true);
 
   fb: FormBuilder = inject(FormBuilder);
   photoForm: FormGroup = this.fb.group({
@@ -46,31 +92,57 @@ export class AddPhotoPage implements OnInit {
     return this.photoForm.get('description') as FormControl;
   }
 
-  constructor(private readonly aRoute: ActivatedRoute, private readonly cameraService: CameraService, private readonly saveInSessionService: SaveInSessionService, private registersService: RegistersService) {
-    addIcons({camera, cloudUpload});
+  constructor(
+    private readonly aRoute: ActivatedRoute,
+    private readonly cameraService: CameraService,
+    private readonly saveInSessionService: SaveInSessionService,
+    private registersService: RegistersService,
+    private connectivityService: ConnectivityService
+  ) {
+    addIcons({ camera, cloudUpload });
+    this.isOnline = this.connectivityService.getNetworkStatus();
     this.photoData = this.saveInSessionService.getPhotoData();
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.photoId = this.aRoute.snapshot.params['idPhoto'];
     this.institutionId = this.aRoute.snapshot.params['idInstitution'];
     this.idRegister = this.aRoute.snapshot.params['idRegister'];
-    if(this.photoId) {
+    if (this.photoId) {
       this.loadPhotoData();
     }
 
-    if(this.idRegister && this.photoId) {
-      this.registersService.getEvidenceById(this.photoId).subscribe({
-        next: (resp) => {
-          this.photoForm.patchValue({
-            name: resp.attributes.title,
-            description: resp.attributes.field_description,
-          });
-          this.photoForm.disable();
-          console.log(resp)
-          this.imageSrc = resp.fileUrl;
-        }
-      });
+    if (this.idRegister && this.photoId) {
+      if(this.isOnline()){
+        this.registersService.getEvidenceById(this.photoId).subscribe({
+          next: (resp) => {
+            this.photoForm.patchValue({
+              name: resp.attributes.title,
+              description: resp.attributes.field_description,
+            });
+            this.photoForm.disable();
+            this.imageSrc = resp.fileUrl;
+          },
+        });
+      } else {
+        await this.getOfflineEvidence();
+      }
+    }
+  }
+
+  async getOfflineEvidence() {
+    try {
+      const evidence = await this.registersService.getEvidenceByIdOffline(this.photoId);
+      if(evidence) {
+        this.photoForm.patchValue({
+          name: evidence.name,
+          description: evidence.description,
+        });
+        this.photoForm.disable();
+        this.imageSrc = evidence.file!;
+      }
+    } catch (error) {
+      throw new Error('Error al obtener la evidencia');
     }
   }
 
@@ -82,8 +154,8 @@ export class AddPhotoPage implements OnInit {
       date: locationData.date,
       time: locationData.time,
       latitude: locationData.latitude,
-      longitude: locationData.longitude
-    })
+      longitude: locationData.longitude,
+    });
   }
 
   async onFileSelected(event: Event) {
@@ -94,13 +166,15 @@ export class AddPhotoPage implements OnInit {
       const reader = new FileReader();
       reader.onload = async () => {
         this.imageSrc = reader.result as string;
-        const locationData = await this.cameraService.getLocationForImage(this.imageSrc);
+        const locationData = await this.cameraService.getLocationForImage(
+          this.imageSrc
+        );
         this.photoForm.patchValue({
           date: locationData.date,
           time: locationData.time,
           latitude: locationData.latitude,
-          longitude: locationData.longitude
-        })
+          longitude: locationData.longitude,
+        });
 
         // if (locationData.latitude && locationData.longitude) {
         //   const approximateLocation = await this.cameraService.getApproximateLocation(locationData.latitude, locationData.longitude);
@@ -114,15 +188,18 @@ export class AddPhotoPage implements OnInit {
   }
 
   savePhoto(): void {
-    if(this.photoForm.invalid){
+    if (this.photoForm.invalid) {
       this.photoForm.markAllAsTouched();
       return;
     }
 
     const currentPhotoData = this.photoData();
-    const nextId = currentPhotoData.length ? currentPhotoData[currentPhotoData.length - 1].id + 1 : 1;
+    const nextId = currentPhotoData.length
+      ? currentPhotoData[currentPhotoData.length - 1].id + 1
+      : 1;
 
-    const {name, description, date, time, latitude, longitude} = this.photoForm.getRawValue();
+    const { name, description, date, time, latitude, longitude } =
+      this.photoForm.getRawValue();
 
     const photoData = {
       id: nextId,
@@ -133,20 +210,24 @@ export class AddPhotoPage implements OnInit {
       latitude,
       longitude,
       url: this.imageSrc,
-      file: this.file
+      file: this.file,
     };
 
-    this.saveInSessionService.savePhotoData(photoData, `/registers/add/select-institution/${this.institutionId}`);
+    this.saveInSessionService.savePhotoData(
+      photoData,
+      `/registers/add/select-institution/${this.institutionId}`
+    );
   }
 
   loadPhotoData() {
     const photoData = this.photoData();
-    const currentPhotoData = photoData.find((photo: PhotoData) => photo.id === Number(this.photoId));
+    const currentPhotoData = photoData.find(
+      (photo: PhotoData) => photo.id === Number(this.photoId)
+    );
     if (currentPhotoData) {
       this.photoForm.patchValue(currentPhotoData);
       this.imageSrc = currentPhotoData.url;
       this.photoForm.disable();
     }
   }
-
 }

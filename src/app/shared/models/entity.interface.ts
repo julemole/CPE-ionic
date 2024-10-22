@@ -102,6 +102,7 @@ export interface Zone {
   department_uuid?: string; // NULL
   region_uuid?: string;    // NULL
   state_uuid?: string;     // NULL
+  users?: string[];
   status: number;       // NOT NULL
 }
 

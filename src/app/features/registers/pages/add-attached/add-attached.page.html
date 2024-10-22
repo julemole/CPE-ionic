@@ -1,7 +1,9 @@
 <ion-header [translucent]="true">
   <ion-toolbar class="toolbar">
     <ion-buttons slot="start">
-      <ion-back-button [defaultHref]="idRegister ? '/registers/' + idRegister : '/registers/add/select-institution/' + institutionId"></ion-back-button>
+      <ion-back-button
+        [defaultHref]="idRegister ? '/registers/' + idRegister : '/registers/add/select-institution/' + institutionId"
+      ></ion-back-button>
     </ion-buttons>
     <ion-title>Anexo</ion-title>
     <ion-buttons slot="start">
@@ -14,23 +16,28 @@
 
 <ion-content [fullscreen]="true">
   <section class="ion-margin">
-    @if(croppedImage()){
-      @if(!attachId){
-        <ion-select class="ion-margin-bottom" label="Estilo" labelPlacement="floating" fill="outline" [formControl]="color" (ionChange)="changeColor()">
-          <ion-select-option value="grayscale">Blanco y negro</ion-select-option>
-          <ion-select-option value="sepia">Sepia</ion-select-option>
-          <ion-select-option value="color">Color</ion-select-option>
-        </ion-select>
-      }
-      <div class="ion-margin-bottom">
-        <img alt="scanPhoto" #image [src]="croppedImage()" />
-      </div>
+    @if(croppedImage()){ @if(!attachId){
+    <ion-select
+      class="ion-margin-bottom"
+      label="Estilo"
+      labelPlacement="floating"
+      fill="outline"
+      [formControl]="color"
+      (ionChange)="changeColor()"
+    >
+      <ion-select-option value="grayscale">Blanco y negro</ion-select-option>
+      <ion-select-option value="sepia">Sepia</ion-select-option>
+      <ion-select-option value="color">Color</ion-select-option>
+    </ion-select>
     }
-    @if(fileSrc) {
-      <ion-item>
-        <ion-label>Anexo cargado:</ion-label>
-        <a [href]="fileSrc" target="_blank">Ver documento</a>
-      </ion-item>
+    <div class="ion-margin-bottom">
+      <img alt="scanPhoto" #image [src]="croppedImage()" />
+    </div>
+    } @if(fileSrc) {
+    <ion-item>
+      <ion-label>Anexo cargado:</ion-label>
+      <a [href]="fileSrc" target="_blank">Ver documento</a>
+    </ion-item>
     }
     <div class="container-btns">
       <div class="file-button">
@@ -39,13 +46,13 @@
           Cargar anexo
         </ion-button>
         @if(!attachId){
-          <input
-            title="Cargar anexo"
-            type="file"
-            class="file-input"
-            (change)="onFileSelected($event)"
-            accept=".pdf, .jpg, .jpeg, .png, .svg"
-          />
+        <input
+          title="Cargar anexo"
+          type="file"
+          class="file-input"
+          (change)="onFileSelected($event)"
+          accept=".pdf, .jpg, .jpeg, .png, .svg"
+        />
         }
       </div>
       <ion-button expand="block" [disabled]="attachId" (click)="scan()">
@@ -53,7 +60,11 @@
         Escanear
       </ion-button>
     </div>
-    <form [formGroup]="attachedForm" class="form-container" (ngSubmit)="saveAttached()">
+    <form
+      [formGroup]="attachedForm"
+      class="form-container"
+      (ngSubmit)="saveAttached()"
+    >
       <ion-input
         label="Nombre *"
         label-placement="floating"
@@ -83,8 +94,8 @@
           expand="block"
           [disabled]="!attachedForm.valid || attachId || (!fileSrc && !croppedImage())"
         >
-          <ion-icon slot="start" name="document-attach-outline" ></ion-icon>
-           Guardar Anexo
+          <ion-icon slot="start" name="document-attach-outline"></ion-icon>
+          Guardar Anexo
         </ion-button>
       </div>
     </form>

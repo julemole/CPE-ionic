@@ -1,28 +1,86 @@
 import { attachedData } from './../../../../shared/models/save-in-session.interface';
-import { Component, effect, inject, OnInit, signal, WritableSignal } from '@angular/core';
+import {
+  Component,
+  effect,
+  inject,
+  OnInit,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonGrid, IonCol, IonRow, IonTextarea, IonInput, IonButton, IonIcon, IonSelect, IonSelectOption, IonItem, IonLabel } from '@ionic/angular/standalone';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import {
+  IonContent,
+  IonHeader,
+  IonTitle,
+  IonToolbar,
+  IonButtons,
+  IonBackButton,
+  IonGrid,
+  IonCol,
+  IonRow,
+  IonTextarea,
+  IonInput,
+  IonButton,
+  IonIcon,
+  IonSelect,
+  IonSelectOption,
+  IonItem,
+  IonLabel,
+} from '@ionic/angular/standalone';
 import { ActivatedRoute, Router, RouterLinkWithHref } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { documentAttachOutline, cloudUpload, scanCircleOutline } from 'ionicons/icons';
+import {
+  documentAttachOutline,
+  cloudUpload,
+  scanCircleOutline,
+} from 'ionicons/icons';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { ImageCropperComponent, ImageTransform } from 'ngx-image-cropper';
 import { Capacitor } from '@capacitor/core';
 import { SaveInSessionService } from 'src/app/shared/services/save-in-session.service';
 import { base64ToBlob, blobToFile } from 'src/app/shared/utils/functions';
 import { RegistersService } from '../../services/registers.service';
+import { ConnectivityService } from '../../../../shared/services/connectivity.service';
 
 @Component({
   selector: 'app-add-attached',
   templateUrl: './add-attached.page.html',
   styleUrls: ['./add-attached.page.scss'],
   standalone: true,
-  imports: [IonItem, IonLabel, IonIcon, IonButton, ImageCropperComponent, IonInput, IonContent, IonHeader, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonButtons, IonBackButton, IonGrid, IonCol, IonRow, IonTextarea, CommonModule, ReactiveFormsModule, RouterLinkWithHref]
+  imports: [
+    IonItem,
+    IonLabel,
+    IonIcon,
+    IonButton,
+    ImageCropperComponent,
+    IonInput,
+    IonContent,
+    IonHeader,
+    IonSelect,
+    IonSelectOption,
+    IonTitle,
+    IonToolbar,
+    IonButtons,
+    IonBackButton,
+    IonGrid,
+    IonCol,
+    IonRow,
+    IonTextarea,
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLinkWithHref,
+  ],
 })
 export class AddAttachedPage implements OnInit {
-
-  isMobile = Capacitor.getPlatform() !== 'web';
+  // isMobile = Capacitor.getPlatform() !== 'web';
+  isOnline: WritableSignal<boolean> = signal(true);
 
   fb: FormBuilder = inject(FormBuilder);
   attachedForm: FormGroup = this.fb.group({
@@ -46,8 +104,15 @@ export class AddAttachedPage implements OnInit {
 
   attachedData: WritableSignal<attachedData[]> = signal<attachedData[]>([]);
 
-  constructor(private aRoute: ActivatedRoute, private router: Router, private saveInSessionService: SaveInSessionService, private registersService: RegistersService) {
-    addIcons({documentAttachOutline,cloudUpload,scanCircleOutline});
+  constructor(
+    private aRoute: ActivatedRoute,
+    private router: Router,
+    private saveInSessionService: SaveInSessionService,
+    private registersService: RegistersService,
+    private connectivityService: ConnectivityService
+  ) {
+    addIcons({ documentAttachOutline, cloudUpload, scanCircleOutline });
+    this.isOnline = this.connectivityService.getNetworkStatus();
     this.attachedData = this.saveInSessionService.getAttachedData();
     this.croppedImage = this.saveInSessionService.getAttachImg();
     this.blobCropImg = this.saveInSessionService.getBlobAttachImg();
@@ -55,48 +120,68 @@ export class AddAttachedPage implements OnInit {
 
     effect(() => {
       const currentValue = this.blobCropImg();
-      console.log('La signal ha cambiado:');
       const file = blobToFile(currentValue, 'image.png');
       this.file = file;
     });
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.attachId = this.aRoute.snapshot.params['attachId'];
     this.institutionId = this.aRoute.snapshot.params['idInstitution'];
     this.idRegister = this.aRoute.snapshot.params['idRegister'];
-    if(this.attachId) {
+    if (this.attachId) {
       this.loadAttachedData();
     } else {
       this.croppedImage.set('');
     }
 
-    if(this.idRegister && this.attachId) {
-      this.registersService.getAnnexById(this.attachId).subscribe({
-        next: (resp) => {
-          console.log(resp)
-          this.attachedForm.patchValue({
-            name: resp.attributes.title,
-            description: resp.attributes.field_description
-          });
-          this.attachedForm.disable();
-          this.fileSrc = resp.fileUrl;
-        }
-      });
+    if (this.idRegister && this.attachId) {
+      if(this.isOnline()){
+        this.registersService.getAnnexById(this.attachId).subscribe({
+          next: (resp) => {
+            console.log(resp);
+            this.attachedForm.patchValue({
+              name: resp.attributes.title,
+              description: resp.attributes.field_description,
+            });
+            this.attachedForm.disable();
+            this.fileSrc = resp.fileUrl;
+          },
+        });
+      } else {
+        await this.getOfflineEvidence();
+      }
     }
+  }
 
+  async getOfflineEvidence() {
+    try {
+      const annex = await this.registersService.getAnnexByIdOffline(this.attachId);
+      if (annex) {
+        this.attachedForm.patchValue({
+          name: annex.name,
+          description: annex.description,
+        });
+        this.attachedForm.disable();
+        this.fileSrc = annex.file!;
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   saveAttached() {
-    if(this.attachedForm.invalid){
+    if (this.attachedForm.invalid) {
       this.attachedForm.markAllAsTouched();
       return;
     }
 
     const currentAttachedData = this.attachedData();
-    const nextId = currentAttachedData.length ? currentAttachedData[currentAttachedData.length - 1].id + 1 : 1;
+    const nextId = currentAttachedData.length
+      ? currentAttachedData[currentAttachedData.length - 1].id + 1
+      : 1;
 
-    const {name, description} = this.attachedForm.getRawValue();
+    const { name, description } = this.attachedForm.getRawValue();
 
     const attachedData = {
       id: nextId,
@@ -104,18 +189,23 @@ export class AddAttachedPage implements OnInit {
       description,
       file: this.file,
       url: this.fileSrc || this.croppedImage(),
-      urlType: this.fileSrc ? 'doc' : 'img'
-    }
+      urlType: this.fileSrc ? 'doc' : 'img',
+    };
 
-    this.saveInSessionService.saveAttachedData(attachedData, `/registers/add/select-institution/${this.institutionId}`);
+    this.saveInSessionService.saveAttachedData(
+      attachedData,
+      `/registers/add/select-institution/${this.institutionId}`
+    );
   }
 
   loadAttachedData() {
     const attachedData = this.attachedData();
-    const currentAttachedData = attachedData.find((photo: attachedData) => photo.id === Number(this.attachId));
+    const currentAttachedData = attachedData.find(
+      (photo: attachedData) => photo.id === Number(this.attachId)
+    );
     if (currentAttachedData) {
       this.attachedForm.patchValue(currentAttachedData);
-      if(currentAttachedData.urlType === 'doc'){
+      if (currentAttachedData.urlType === 'doc') {
         this.fileSrc = currentAttachedData.url!;
         this.saveInSessionService.saveAttachImg('');
       } else {
@@ -128,15 +218,15 @@ export class AddAttachedPage implements OnInit {
   }
 
   changeColor() {
-    if(this.color.value == 'grayscale'){
+    if (this.color.value == 'grayscale') {
       this.convertImage('grayscale');
     }
 
-    if(this.color.value == 'sepia'){
+    if (this.color.value == 'sepia') {
       this.convertImage('sepia');
     }
 
-    if(this.color.value == 'color'){
+    if (this.color.value == 'color') {
       this.resetImage();
     }
   }
@@ -148,7 +238,7 @@ export class AddAttachedPage implements OnInit {
       this.file = file;
       const fileUrl = URL.createObjectURL(file);
       this.fileSrc = fileUrl;
-      this.saveInSessionService.saveAttachImg('', '', true)
+      this.saveInSessionService.saveAttachImg('', '', true);
     }
   }
 
@@ -167,7 +257,12 @@ export class AddAttachedPage implements OnInit {
         const width = img.width;
         const height = img.height;
         this.fileSrc = '';
-        this.saveInSessionService.saveAttachImgB64(myImage, width, height, `/registers/add/select-institution/${this.institutionId}/cropper`);
+        this.saveInSessionService.saveAttachImgB64(
+          myImage,
+          width,
+          height,
+          `/registers/add/select-institution/${this.institutionId}/cropper`
+        );
       };
       img.src = myImage;
     }
@@ -192,9 +287,9 @@ export class AddAttachedPage implements OnInit {
           case 'grayscale':
             for (let i = 0; i < data.length; i += 4) {
               const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-              data[i] = avg;        // Red
-              data[i + 1] = avg;    // Green
-              data[i + 2] = avg;    // Blue
+              data[i] = avg; // Red
+              data[i + 1] = avg; // Green
+              data[i + 2] = avg; // Blue
             }
             break;
           case 'sepia':
@@ -223,5 +318,4 @@ export class AddAttachedPage implements OnInit {
       this.saveInSessionService.saveAttachImg(this.originalImage());
     }
   }
-
 }

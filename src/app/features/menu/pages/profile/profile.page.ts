@@ -29,7 +29,6 @@ import {
   personCircleOutline,
   logOutOutline,
 } from 'ionicons/icons';
-import { AuthService } from 'src/app/features/auth/services/auth.service';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
@@ -67,7 +66,6 @@ import { ConnectivityService } from 'src/app/shared/services/connectivity.servic
 })
 export class ProfilePage implements OnInit {
   isOnline: WritableSignal<boolean> = signal(true);
-  error: any;
 
   userInfo: any;
   tutorName: string = '';
@@ -96,8 +94,8 @@ export class ProfilePage implements OnInit {
   async ngOnInit() {
     const user_id = this.localStorageSv.getItem('USER_ID');
     if (user_id) {
-      this.showLoading();
-      if(this.isOnline()){
+      if (this.isOnline()) {
+        this.showLoading();
         this.getCompleteData(user_id);
       } else {
         await this.getOfflineUserData(user_id);
@@ -124,7 +122,7 @@ export class ProfilePage implements OnInit {
         this.loadData();
       },
       error: (error) => {
-        console.log(error)
+        console.log(error);
         this.hideLoading();
       },
     });
@@ -133,7 +131,7 @@ export class ProfilePage implements OnInit {
   async getOfflineUserData(user_id: string) {
     try {
       const userInfo = await this.userService.getUserInfOffline(user_id);
-      if(userInfo){
+      if (userInfo) {
         this.userInfo = userInfo;
         this.tutorName = userInfo.full_name || '';
         this.documentType = userInfo.document_type || '';
@@ -143,15 +141,10 @@ export class ProfilePage implements OnInit {
         this.department = userInfo.department || '';
       }
 
-      // this.zonesList = await this.userService.getZonesBytutor(user_id);
-      // this.groups = this.zonesList.flatMap(
-      //   (zone: any) => zone.sedes_groups
-      // );
-      await this.hideLoading();
+      this.zonesList = await this.userService.getZonesBytutor(user_id);
+      this.groups = this.zonesList.flatMap((zone: any) => zone.sedes_groups);
     } catch (error: any) {
-      this.error = error.message;
-      console.log(error)
-      await this.hideLoading();
+      console.log(error);
     }
   }
 

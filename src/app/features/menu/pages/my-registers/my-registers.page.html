@@ -3,9 +3,7 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>
-      Mis registros
-    </ion-title>
+    <ion-title> Mis registros </ion-title>
     <ion-buttons slot="start">
       <ion-button>
         <ion-icon name="document-text-outline"></ion-icon>
@@ -46,31 +44,43 @@
   <!-- <span>{{registers() | json}}</span> -->
   @if (myRegisters.length){
   <ion-card>
-      <div class="table-container registers-table">
-        <table>
-          <tr>
-            <th>Registro</th>
-            <th>Institución Educativa</th>
-          </tr>
-          @for( register of myRegisters; track register.id || register.uuid; let i = $index;){
-            <tr>
-              <td><a [routerLink]="['/registers', register.id || register.uuid]">{{register.created || register.date_created | date:'dd/MM/yyyy'}}</a></td>
-              <td>{{register.sede || register.sede_uuid || 'sin sede'}}</td>
-            </tr>
-          }
-        </table>
-
-        @if(hasMoreData){
-          <ion-infinite-scroll threshold="50px" (ionInfinite)="loadMoreData($event)">
-            <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Cargando más datos...">
-            </ion-infinite-scroll-content>
-          </ion-infinite-scroll>
+    <div class="table-container registers-table">
+      <table>
+        <tr>
+          <th>Registro</th>
+          <th>Institución Educativa</th>
+        </tr>
+        @for( register of myRegisters; track register.id || register.uuid; let i
+        = $index;){
+        <tr>
+          <td>
+            <a [routerLink]="['/registers', (register.id || register.uuid)]"
+              >{{register.created || register.date_created |
+              date:'dd/MM/yyyy'}}</a
+            >
+          </td>
+          <td>{{register.sede || register.sede_name || 'sin sede'}}</td>
+        </tr>
         }
-      </div>
-    </ion-card>
-  } @else {
-    <div class="ion-margin">
-      <p>No se encontraron registros</p>
+      </table>
+
+      @if(hasMoreData){
+      <ion-infinite-scroll
+        threshold="50px"
+        (ionInfinite)="loadMoreData($event)"
+      >
+        <ion-infinite-scroll-content
+          loadingSpinner="bubbles"
+          loadingText="Cargando más datos..."
+        >
+        </ion-infinite-scroll-content>
+      </ion-infinite-scroll>
+      }
     </div>
+  </ion-card>
+  } @else {
+  <div class="ion-margin">
+    <p>No se encontraron registros</p>
+  </div>
   }
 </ion-content>
