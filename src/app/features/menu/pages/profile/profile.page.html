@@ -4,6 +4,9 @@
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
     <ion-title> Mi perfil </ion-title>
+    @if(isLoading){
+      <ion-progress-bar type="indeterminate" color="light"></ion-progress-bar>
+    }
     <ion-buttons slot="start">
       <ion-button>
         <ion-icon name="person-circle-outline"></ion-icon>
@@ -21,16 +24,16 @@
         <p><strong>Nombre Tutor:</strong></p>
       </ion-col>
       <ion-col size="6">
-        <p class="ion-text-capitalize">{{tutorName || 'No se encontró'}}</p>
+        <p class="ion-text-capitalize">{{tutorName || ''}}</p>
       </ion-col>
     </ion-row>
 
     <ion-row>
       <ion-col size="6">
-        <p><strong>{{documentType || 'Cédula de ciudadanía'}}</strong></p>
+        <p><strong>{{documentType || 'Cédula de ciudadanía:'}}</strong></p>
       </ion-col>
       <ion-col size="6">
-        <p>{{identification || 'No se encontró'}}</p>
+        <p>{{identification || ''}}</p>
       </ion-col>
     </ion-row>
 
@@ -39,7 +42,7 @@
         <p><strong>Correo electrónico:</strong></p>
       </ion-col>
       <ion-col size="6">
-        <p>{{email || 'No se encontró'}}</p>
+        <p>{{email || ''}}</p>
       </ion-col>
     </ion-row>
 
@@ -48,7 +51,7 @@
         <p><strong>Nombre de usuario:</strong></p>
       </ion-col>
       <ion-col size="6">
-        <p>{{email || 'No se encontró'}}</p>
+        <p>{{username || ''}}</p>
       </ion-col>
     </ion-row>
 
@@ -57,7 +60,7 @@
         <p><strong>Departamento:</strong></p>
       </ion-col>
       <ion-col size="6">
-        <p>{{department || 'No se encontró'}}</p>
+        <p>{{department || ''}}</p>
       </ion-col>
     </ion-row>
 
@@ -67,7 +70,7 @@
       </ion-col>
       <ion-col size="6">
         @for(zone of zonesList; track zone.id || zone.uuid){
-        <p>{{zone.title || zone.name || 'No se encontró'}}</p>
+        <p>{{zone.title || zone.name || ''}}</p>
         }
       </ion-col>
     </ion-row>
@@ -78,7 +81,7 @@
       </ion-col>
       <ion-col size="6">
         <p>
-          {{group.field_municipality || group.municipality || 'No se encontró'}}
+          {{group.field_municipality || group.municipality || ''}}
         </p>
       </ion-col>
     </ion-row>
@@ -88,9 +91,9 @@
       </ion-col>
       <ion-col size="6">
         @if(isOnline()){ @for(sede of group.groupOffices; track sede.id){
-        <p>{{sede.attributes.title || 'No se encontró'}}</p>
+        <p>{{sede.attributes.title || ''}}</p>
         } } @else { @for(sede of group.sedes; track sede.uuid){
-        <p>{{sede.name || 'No se encontró'}}</p>
+        <p>{{sede.name || ''}}</p>
         } }
       </ion-col>
     </ion-row>
@@ -99,11 +102,12 @@
 
 }
 
-
-<div class="btn-ct">
-  <ion-button class="ion-margin-vertical" expand="stacked" (click)="logout()">
-    <ion-icon name="log-out-outline" slot="start"></ion-icon>
-    Cerrar sesión
-  </ion-button>
-</div>
+@if(!isLoading){
+  <div class="btn-ct">
+    <ion-button class="ion-margin-vertical" expand="stacked" (click)="logout()">
+      <ion-icon name="log-out-outline" slot="start"></ion-icon>
+      Cerrar sesión
+    </ion-button>
+  </div>
+}
 </ion-content>

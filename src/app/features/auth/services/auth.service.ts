@@ -22,18 +22,23 @@ export class AuthService {
     try {
       const user = await this.dbService.getUserByUsername(credentials.name);
       const passBasic = btoa(credentials.pass);
+
       if (user) {
         const token = btoa(`${credentials.name}:${credentials.pass}`);
-        if(user.password === passBasic) {
+        if (user.password === passBasic) {
           return { token, user };
         } else {
           throw new Error('Contraseña incorrecta');
         }
       } else {
+        throw new Error('No se encontró el usuario en la DB Local');
+      }
+    } catch (error: any) {
+      if (error.message === 'Contraseña incorrecta' || error.message === 'No se encontró el usuario en la DB Local') {
+        throw error;
+      } else {
         throw new Error('No se encontró el usuario');
       }
-    } catch (error) {
-      throw new Error('Error en las credenciales');
     }
   }
 

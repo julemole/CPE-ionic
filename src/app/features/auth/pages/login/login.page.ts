@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, WritableSignal } from '@angular/core';
+import { Component, signal, WritableSignal } from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -107,6 +107,7 @@ export class LoginPage {
       name: email,
       pass: password,
     };
+
     this.message = 'Iniciando sesión...';
     await this.showLoading();
 
@@ -129,7 +130,6 @@ export class LoginPage {
         const data = await this.authService.signInOffline(credentials);
         this.localStorageService.setItem('TOKEN', data.token);
         this.localStorageService.setItem('USER_ID', data.user.uuid);
-        await this.dbService.loadAllData();
         await this.hideLoading();
         this.router.navigate(['/home']);
       } catch (error: any) {
@@ -144,7 +144,7 @@ export class LoginPage {
     this.authService.getUserId(token).subscribe({
       next: (id) => {
         this.localStorageService.setItem('USER_ID', id);
-        if (this.platform.is('cordova') || this.platform.is('capacitor')) {
+        if (this.platform.is('hybrid')) {
           this.synchronizeData(id, this.password.value);
         } else {
           this.hideLoading();
@@ -161,15 +161,14 @@ export class LoginPage {
 
   async synchronizeData(idUser: string, pass: string) {
     if (await this.dbService.isDbReady()) {
-      await this.dbService.loadSyncLogs();
-      const syncLogs = this.dbService.getSyncLogList();
+      const syncLogs = await this.dbService.loadSyncLogs();
       const user = await this.dbService.getUserById(idUser);
       const passBasic = btoa(pass);
       if (!user?.password) {
         await this.hideLoading();
         this.message = 'Descargando información requerida...';
         await this.showLoading();
-        if (syncLogs().length) {
+        if (syncLogs.length) {
           try {
             await this.syncDataService.newUserData(idUser, passBasic);
             this.hideLoading();
@@ -190,7 +189,6 @@ export class LoginPage {
         }
       } else {
         if (user.password === passBasic) {
-          await this.dbService.loadAllData();
           this.hideLoading();
           this.router.navigate(['/home']);
         } else {
@@ -198,7 +196,6 @@ export class LoginPage {
             await this.dbService.updateUserById(idUser, {
               password: passBasic,
             });
-            await this.dbService.loadAllData();
             this.hideLoading();
             this.router.navigate(['/home']);
           } catch (error) {
@@ -247,7 +244,6 @@ export class LoginPage {
   }
 
   async hideLoading() {
-    console.log(this.loading);
     if (this.loading) {
       await this.loading.dismiss();
       this.loading = null;

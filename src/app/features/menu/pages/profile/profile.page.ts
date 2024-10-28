@@ -5,7 +5,6 @@ import {
   IonContent,
   IonHeader,
   IonTitle,
-  LoadingController,
   IonToolbar,
   IonBackButton,
   IonButtons,
@@ -21,8 +20,7 @@ import {
   IonButton,
   IonCol,
   IonGrid,
-  IonRow,
-} from '@ionic/angular/standalone';
+  IonRow, IonProgressBar } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
   personOutline,
@@ -41,6 +39,7 @@ import { ConnectivityService } from 'src/app/shared/services/connectivity.servic
   styleUrls: ['./profile.page.scss'],
   standalone: true,
   imports: [
+    IonProgressBar,
     IonButton,
     IonInput,
     IonGrid,
@@ -75,7 +74,7 @@ export class ProfilePage implements OnInit {
   username: string = '';
   department: string = '';
   route: string = '';
-  loading!: HTMLIonLoadingElement;
+  isLoading: boolean = false;
 
   zonesList: any[] = [];
   groups: any[] = [];
@@ -84,7 +83,6 @@ export class ProfilePage implements OnInit {
     private router: Router,
     private localStorageSv: LocalStorageService,
     private userService: UserService,
-    private loadingController: LoadingController,
     private connectivityService: ConnectivityService,
   ) {
     addIcons({ personCircleOutline, logOutOutline, personOutline });
@@ -95,7 +93,7 @@ export class ProfilePage implements OnInit {
     const user_id = this.localStorageSv.getItem('USER_ID');
     if (user_id) {
       if (this.isOnline()) {
-        this.showLoading();
+        this.isLoading = true;
         this.getCompleteData(user_id);
       } else {
         await this.getOfflineUserData(user_id);
@@ -111,6 +109,7 @@ export class ProfilePage implements OnInit {
       next: ([userInfo, zonesWithSedes]) => {
         this.userInfo = userInfo;
         this.zonesList = zonesWithSedes;
+        console.log(this.zonesList)
         const allOfficesGroups = this.zonesList.flatMap(
           (zone: any) => zone.officesGroups
         );
@@ -123,7 +122,7 @@ export class ProfilePage implements OnInit {
       },
       error: (error) => {
         console.log(error);
-        this.hideLoading();
+        this.isLoading = false;
       },
     });
   }
@@ -136,8 +135,8 @@ export class ProfilePage implements OnInit {
         this.tutorName = userInfo.full_name || '';
         this.documentType = userInfo.document_type || '';
         this.identification = userInfo.document_number || '';
-        this.email = userInfo.mail;
-        this.username = userInfo.username;
+        this.email = userInfo.mail || '';
+        this.username = userInfo.username || '';
         this.department = userInfo.department || '';
       }
 
@@ -151,14 +150,6 @@ export class ProfilePage implements OnInit {
   logout(): void {
     this.localStorageSv.clearStorage();
     this.router.navigate(['/login']);
-    // const logoutToken = this.localStorageSv.getItem('LOGOUT_TOKEN');
-    // const csrfToken = this.localStorageSv.getItem('CSRF_TOKEN');
-    // if(logoutToken && csrfToken) {
-    //   this.authService.logout(logoutToken, csrfToken).subscribe({
-    //     next: () => {
-    //     }
-    //   });
-    // }
   }
 
   loadData(): void {
@@ -168,16 +159,7 @@ export class ProfilePage implements OnInit {
     this.email = this.userInfo.mail;
     this.username = this.userInfo.username;
     this.department = this.userInfo.field_department;
-    this.hideLoading();
+    this.isLoading = false;
     // this.route = data.route;
-  }
-
-  async showLoading() {
-    this.loading = await this.loadingController.create();
-    await this.loading.present();
-  }
-
-  async hideLoading() {
-    await this.loading.dismiss();
   }
 }

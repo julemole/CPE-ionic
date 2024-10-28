@@ -8,6 +8,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
+  IonProgressBar,
   IonContent,
   IonHeader,
   IonTitle,
@@ -23,7 +24,6 @@ import {
   IonInfiniteScrollContent,
   IonInfiniteScroll,
   IonSelectOption,
-  LoadingController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { documentTextOutline, save } from 'ionicons/icons';
@@ -31,7 +31,6 @@ import { RegistersService } from 'src/app/features/registers/services/registers.
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { RouterLinkWithHref } from '@angular/router';
 import { ConnectivityService } from '../../../../shared/services/connectivity.service';
-import { DatabaseService } from 'src/app/shared/services/database.service';
 
 @Component({
   selector: 'app-my-registers',
@@ -40,6 +39,7 @@ import { DatabaseService } from 'src/app/shared/services/database.service';
   standalone: true,
   imports: [
     RouterLinkWithHref,
+    IonProgressBar,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonSelectOption,
@@ -61,6 +61,7 @@ import { DatabaseService } from 'src/app/shared/services/database.service';
 })
 export class MyRegistersPage implements OnInit {
   isOnline: WritableSignal<boolean> = signal(true);
+  isLoading: boolean = false;
 
   fb: FormBuilder = inject(FormBuilder);
   searchForm = this.fb.group({
@@ -71,14 +72,11 @@ export class MyRegistersPage implements OnInit {
   });
   myRegisters: any[] = [];
   hasMoreData: boolean = false;
-  loading!: HTMLIonLoadingElement;
 
   constructor(
     private registersService: RegistersService,
     private localStorageSv: LocalStorageService,
-    private loadingController: LoadingController,
     private connectivityService: ConnectivityService,
-    private dbService: DatabaseService
   ) {
     addIcons({ documentTextOutline });
     this.isOnline = this.connectivityService.getNetworkStatus();
@@ -88,7 +86,7 @@ export class MyRegistersPage implements OnInit {
     const idUser = this.localStorageSv.getItem('USER_ID');
     if (idUser) {
       if (this.isOnline()) {
-        this.showLoading();
+        this.isLoading = true;
         this.getRegisters(idUser);
       } else {
         await this.getRegistersOffline(idUser);
@@ -100,10 +98,10 @@ export class MyRegistersPage implements OnInit {
     this.registersService.getRegistersByUser(idUser).subscribe({
       next: (resp) => {
         this.myRegisters = resp;
-        this.hideLoading();
+        this.isLoading = false;
       },
       error: (error) => {
-        this.hideLoading();
+        this.isLoading = false;
         console.error(error);
       },
     });
@@ -114,6 +112,12 @@ export class MyRegistersPage implements OnInit {
       this.myRegisters = await this.registersService.getRegistersByUserOffline(
         idUser
       );
+      this.myRegisters.sort((a, b) => {
+        const dateA = new Date(a.date_created).getTime();
+        const dateB = new Date(b.date_created).getTime();
+
+        return dateB - dateA;
+      });
     } catch (error) {
       throw new Error('Error al obtener los registros');
     }
@@ -123,14 +127,5 @@ export class MyRegistersPage implements OnInit {
 
   clearFields(): void {
     this.searchForm.reset();
-  }
-
-  async showLoading() {
-    this.loading = await this.loadingController.create();
-    await this.loading.present();
-  }
-
-  async hideLoading() {
-    await this.loading.dismiss();
   }
 }

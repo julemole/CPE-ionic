@@ -12,19 +12,22 @@ export class SaveInSessionService {
   private signature: WritableSignal<string> = signal<string>('');
   private registerPayload: WritableSignal<any> = signal<any>({});
 
-  //Manejo de imagenes
-  private attachImg: WritableSignal<string> = signal<string>('');
-  private blobAttachImg: WritableSignal<Blob> = signal<Blob>(new Blob());
-  private originalAttachImg: WritableSignal<string> = signal<string>('');
-  private attachImgB64: WritableSignal<string> = signal<string>('');
-  private widthImgB64: WritableSignal<number> = signal<number>(0);
-  private heightImgB64: WritableSignal<number> = signal<number>(0);
-
   constructor(private router: Router) { }
+
+  cleanAllData() {
+    this.saveRegisterPayload({});
+    this.cleanPhotoData();
+    this.cleanAttachedData();
+    this.cleanSignature();
+  }
 
   savePhotoData(data: PhotoData, url: string) {
     this.photoData.set([...this.photoData(), data]);
     this.router.navigate([url]);
+  }
+
+  cleanPhotoData() {
+    this.photoData.set([]);
   }
 
   getPhotoData() {
@@ -40,6 +43,10 @@ export class SaveInSessionService {
     this.router.navigate([url]);
   }
 
+  cleanAttachedData() {
+    this.attachedData.set([]);
+  }
+
   getAttachedData() {
     return this.attachedData;
   }
@@ -53,6 +60,10 @@ export class SaveInSessionService {
     this.router.navigate([url]);
   }
 
+  cleanSignature() {
+    this.signature.set('');
+  }
+
   getSignature() {
     return this.signature;
   }
@@ -63,55 +74,5 @@ export class SaveInSessionService {
 
   getRegisterPayload() {
     return this.registerPayload;
-  }
-
-  saveAttachImg(data: string, url?: string, isOriginal?: boolean) {
-    this.attachImg.set(data);
-    if(url){
-      this.router.navigate([url]);
-    }
-
-    if(isOriginal) this.originalAttachImg.set(data);
-  }
-
-  getAttachImg() {
-    return this.attachImg;
-  }
-
-  getOriginalAttachImg() {
-    return this.originalAttachImg;
-  }
-
-  saveBlobAttachImg(data: Blob) {
-    this.blobAttachImg.set(data);
-  }
-
-  getBlobAttachImg() {
-    return this.blobAttachImg;
-  }
-
-  saveAttachImgB64(data: string, width?: number, height?: number, url?: string) {
-    this.attachImgB64.set(data);
-    if(width){
-      this.widthImgB64.set(width);
-    }
-    if(height){
-      this.heightImgB64.set(height);
-    }
-    if(url){
-      this.router.navigate([url]);
-    }
-  }
-
-  getAttachImgB64() {
-    return this.attachImgB64;
-  }
-
-  getWidthImgB64() {
-    return this.widthImgB64;
-  }
-
-  getHeightImgB64() {
-    return this.heightImgB64;
   }
 }

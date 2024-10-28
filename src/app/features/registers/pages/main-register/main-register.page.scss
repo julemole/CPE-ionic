@@ -1,3 +1,5 @@
+
+
 .title {
   font-size: 1rem;
   text-align: center;
@@ -27,15 +29,17 @@ ion-button {
 }
 
 .title-subsect {
+  font-size: 1.15rem;
   font-weight: bold;
 }
 
 .list-item {
-  font-size: 14px;
+  font-size: 1rem;
+  font-weight: bold;
   text-decoration: underline;
   margin: 0;
 }
 
-.item {
-  height: 35px;
-}
+// .item {
+//   height: 35px;
+// }

@@ -1,5 +1,6 @@
 export interface PhotoData {
   id: number;
+  local_uuid?: string;
   idFile?: string;
   idEvidence?: string;
   name: string;
@@ -14,6 +15,7 @@ export interface PhotoData {
 
 export interface attachedData {
   id: number;
+  local_uuid?: string;
   idFile?: string;
   idAnnex?: string;
   name: string;

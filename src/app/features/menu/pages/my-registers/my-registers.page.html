@@ -4,6 +4,9 @@
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
     <ion-title> Mis registros </ion-title>
+    @if(isLoading){
+      <ion-progress-bar type="indeterminate" color="light"></ion-progress-bar>
+    }
     <ion-buttons slot="start">
       <ion-button>
         <ion-icon name="document-text-outline"></ion-icon>
@@ -79,8 +82,10 @@
     </div>
   </ion-card>
   } @else {
-  <div class="ion-margin">
-    <p>No se encontraron registros</p>
-  </div>
+  @if(!isLoading){
+    <div class="ion-margin">
+      <p>No se encontraron registros</p>
+    </div>
+  }
   }
 </ion-content>

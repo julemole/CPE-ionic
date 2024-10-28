@@ -22,10 +22,6 @@ export const registerRoutes: Routes = [
     ]
   },
   {
-    path: 'select-institution/:idInstitution/cropper',
-    loadComponent: () => import('./pages/cropper/cropper.page').then((m) => m.CropperPage)
-  },
-  {
     path: 'select-institution/:idInstitution/add-photo',
     loadComponent: () => import('./pages/add-photo/add-photo.page').then((m) => m.AddPhotoPage)
   },

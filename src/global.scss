@@ -35,6 +35,8 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import '@ionic/angular/css/palettes/high-contrast.system.css';
+// @import '@ionic/angular/css/palettes/dark.system.css';
+
 
 //styles
 .error-message {
@@ -70,13 +72,10 @@ table {
 }
 
 th, td {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  position: relative;
-  padding: 6px 10px;
+  padding: 10px;
   border: 1px solid #ccc;
   text-align: left;
+  font-size: 1.1rem;
 }
 
 th {
@@ -84,29 +83,21 @@ th {
   position: sticky;
   top: 0;
   z-index: 1;
+  font-size: 1.2rem;
 }
 
+// tr > td:last-child {
+//   font-size: 1.2rem;
+//   text-transform: capitalize;
+// }
+
 .registers-table th:first-child, td:first-child {
-  width: 30%;
+  width: 35%;
 }
 
 // .act-table th:last-child, td:last-child {
 //   width: 40%;
 // }
-
-td:hover::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  background: #333;
-  color: #fff;
-  padding: 5px;
-  border-radius: 5px;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  z-index: 10;
-}
 
 //alert
 .error-alert .alert-head {
@@ -125,13 +116,21 @@ td:hover::after {
   text-align: center;
 }
 
-.error-alert .alert-message, .success-alert .alert-message {
+.warning-alert .alert-head {
+  .alert-title{
+    color: white;
+  }
+  background-color: #FFA500;
+  text-align: center;
+}
+
+.error-alert .alert-message, .success-alert .alert-message, .warning-alert .alert-message {
   padding-top: 1rem !important;
   padding: 1rem;
   text-align: center;
 }
 
-.error-alert .alert-button-group, .success-alert .alert-button-group {
+.error-alert .alert-button-group, .success-alert .alert-button-group, .warning-alert .alert-button-group {
   display: flex;
   justify-content: center;
 }
@@ -143,3 +142,4 @@ td:hover::after {
 .success-alert .alert-button {
   color: var(--ion-color-primary);
 }
+

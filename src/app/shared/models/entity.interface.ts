@@ -4,27 +4,24 @@ export interface SyncLog {
   details?: string;
 }
 
+export interface UserSettings {
+  app_theme?: string;
+  size_text?: string;
+}
+
 export interface User {
   uuid: string;         // NOT NULL
-  id: number;           // NOT NULL
-  username: string;     // NOT NULL
+  id?: number;           // NOT NULL
+  username?: string;     // NOT NULL
   password?: string;    // NULL
-  mail: string;         // NOT NULL
+  mail?: string;         // NOT NULL
   full_name?: string;   // NULL
   document_type?: string;   // NULL
   document_number?: string; // NULL
   telephone?: string;   // NULL
   department?: string;  // NULL
-  status: number;       // NOT NULL
-}
-
-export interface Role {
-  name: string;         // NOT NULL
-}
-
-export interface UserRole {
-  user_uuid: string;    // NOT NULL
-  role_name: string;    // NOT NULL
+  role?: string;        // NULL
+  status?: number;       // NOT NULL
 }
 
 export interface StateParametric {
@@ -40,6 +37,7 @@ export interface Parametric {
 
 export interface Annex {
   uuid: string;         // NOT NULL
+  server_uuid?: string;   // NULL
   name: string;         // NOT NULL
   description?: string; // NULL
   date_created?: string; // NULL
@@ -51,6 +49,7 @@ export interface Annex {
 
 export interface Evidence {
   uuid: string;         // NOT NULL
+  server_uuid?: string;   // NULL
   name: string;         // NOT NULL
   description?: string; // NULL
   date_created?: string; // NULL
@@ -74,6 +73,8 @@ export interface Region {
 export interface Sede {
   uuid: string;         // NOT NULL
   name: string;         // NOT NULL
+  code_dane?: string;    // NULL
+  address?: string;     // NULL
   date_created?: string; // NULL
   department_uuid?: string; // NULL
   location_uuid?: string;  // NULL
@@ -100,7 +101,6 @@ export interface Zone {
   name: string;         // NOT NULL
   date_created?: string; // NULL
   department_uuid?: string; // NULL
-  region_uuid?: string;    // NULL
   state_uuid?: string;     // NULL
   users?: string[];
   status: number;       // NOT NULL
@@ -126,6 +126,8 @@ export interface Register {
   subactivity_uuid?: string; // NULL
   sede_uuid?: string;      // NULL
   user_uuid?: string;      // NULL
+  annexList?: any[];    // NULL
+  evidenceList?: any[];  // NULL
   is_synced: number;    // NOT NULL
   sync_action?: string;   // NULL
   status: number;       // NOT NULL
@@ -134,9 +136,11 @@ export interface Register {
 export interface RegisterAnnex {
   register_uuid: string;  // NOT NULL
   annex_uuid: string;     // NOT NULL
+  is_synced: number;    // NOT NULL
 }
 
 export interface RegisterEvidence {
   register_uuid: string;  // NOT NULL
   evidence_uuid: string;  // NOT NULL
+  is_synced: number;    // NOT NULL
 }

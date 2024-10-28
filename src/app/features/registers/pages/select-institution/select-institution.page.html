@@ -4,6 +4,9 @@
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
     <ion-title> Nuevo registro </ion-title>
+    @if(isLoading){
+      <ion-progress-bar type="indeterminate" color="light"></ion-progress-bar>
+    }
     <ion-buttons slot="start">
       <ion-button>
         <ion-icon name="document-text-outline"></ion-icon>
@@ -22,12 +25,12 @@
   <ion-card-title class="ion-padding-horizontal ion-padding-top"
     >{{tutorInfo?.field_department || tutorInfo?.department}}</ion-card-title
   >
-  <ion-accordion-group class="ion-margin">
+  <ion-accordion-group class="ion-margin" [value]="accordionValues">
     @for (zone of zonesList; track zone.id || zone.uuid){
-    <ion-accordion>
+    <ion-accordion [value]="zone.id || zone.uuid">
       <ion-item slot="header">
         <ion-label>
-          <strong>{{(zone.title || zone.name) + ' / ' + (zone.field_region || zone.region)}}</strong>
+          <strong>{{(zone.title || zone.name) + ' / ' + (zone.field_department || zone.department || '')}}</strong>
         </ion-label>
       </ion-item>
       <ion-list slot="content">
@@ -37,6 +40,27 @@
               >{{sede.attributes?.title || sede.name}}</ion-label
             >
           </ion-item>
+
+          <!-- <ion-accordion-group>
+            @for(subItem of sede.subItems; track subItem.id || subItem.uuid) {
+              <ion-accordion [value]="subItem.id || subItem.uuid">
+                <ion-item slot="header">
+                  <ion-label>
+                    <strong>{{subItem.title || subItem.name}}</strong>
+                  </ion-label>
+                </ion-item>
+                <ion-list slot="content">
+                  @for(detail of subItem.details; track detail.id || detail.uuid) {
+                    <ion-item lines="none">
+                      <ion-label>
+                        {{detail.name}}
+                      </ion-label>
+                    </ion-item>
+                  }
+                </ion-list>
+              </ion-accordion>
+            }
+          </ion-accordion-group> -->
         }
       </ion-list>
     </ion-accordion>

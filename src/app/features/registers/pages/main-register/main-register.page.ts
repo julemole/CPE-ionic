@@ -16,6 +16,7 @@ import {
 } from '@angular/forms';
 import {
   IonContent,
+  IonProgressBar,
   IonHeader,
   IonTitle,
   IonToolbar,
@@ -31,7 +32,7 @@ import {
   IonList,
   IonItem,
   IonSelectOption,
-  LoadingController,
+  AlertController
 } from '@ionic/angular/standalone';
 import { ActivatedRoute, RouterLinkWithHref } from '@angular/router';
 import { addIcons } from 'ionicons';
@@ -55,7 +56,7 @@ import {
 import { RegistersService } from '../../services/registers.service';
 import { ConnectivityService } from '../../../../shared/services/connectivity.service';
 import { DatabaseService } from 'src/app/shared/services/database.service';
-import { loadSignatureImage } from 'src/app/shared/utils/functions';
+import { loadSignatureFile } from 'src/app/shared/utils/functions';
 
 @Component({
   selector: 'app-main-register',
@@ -65,6 +66,7 @@ import { loadSignatureImage } from 'src/app/shared/utils/functions';
   imports: [
     IonItem,
     IonList,
+    IonProgressBar,
     IonSelectOption,
     IonContent,
     IonHeader,
@@ -87,6 +89,7 @@ import { loadSignatureImage } from 'src/app/shared/utils/functions';
 })
 export class MainRegisterPage implements OnInit {
   isOnline: WritableSignal<boolean> = signal(true);
+  isLoading: boolean = false;
 
   idInstitution: string = '';
   idRegister: string = '';
@@ -110,16 +113,14 @@ export class MainRegisterPage implements OnInit {
   photoData: WritableSignal<PhotoData[]> = signal<PhotoData[]>([]);
   attachedData: WritableSignal<attachedData[]> = signal<attachedData[]>([]);
 
-  loading!: HTMLIonLoadingElement;
-
   constructor(
     private aRoute: ActivatedRoute,
     private parametricsService: ParametricsService,
-    private loadingController: LoadingController,
     private saveInSessionService: SaveInSessionService,
     private registersService: RegistersService,
     private connectivityService: ConnectivityService,
-    private dbService: DatabaseService
+    private dbService: DatabaseService,
+    private alertController: AlertController,
   ) {
     addIcons({
       documentTextOutline,
@@ -162,7 +163,7 @@ export class MainRegisterPage implements OnInit {
     this.idRegister = this.aRoute.snapshot.params['idRegister'];
     if (this.idInstitution || this.idRegister) {
       if(this.isOnline()){
-        this.showLoading();
+        this.isLoading = true;
         this.getTaxonomies();
       } else {
         await this.getTaxonomiesOffline();
@@ -177,8 +178,8 @@ export class MainRegisterPage implements OnInit {
         this.loadDataRegister();
       },
       error: (error) => {
+        this.isLoading = false;
         console.error(error);
-        this.hideLoading();
       },
     });
   }
@@ -196,8 +197,7 @@ export class MainRegisterPage implements OnInit {
     });
 
     this.registerForm.disable();
-
-    this.hideLoading();
+    this.isLoading = false;
   }
 
   getTaxonomies(): void {
@@ -227,15 +227,15 @@ export class MainRegisterPage implements OnInit {
         this.subactivitiesList = subactivities;
         if (institution) {
           this.institution = institution;
-          this.hideLoading();
+          this.isLoading = false;
         }
         if (this.idRegister) {
           this.getRegisterData();
         }
       },
       error: (error) => {
+        this.isLoading = false;
         console.error(error);
-        this.hideLoading();
       },
     });
   }
@@ -256,8 +256,9 @@ export class MainRegisterPage implements OnInit {
               activity: register.activity_uuid,
               subactivity: register.subactivity_uuid,
             });
+
             if(register.signature_file){
-              this.imgUrl = await loadSignatureImage(register.signature_file);
+              this.imgUrl = await loadSignatureFile(register.signature_file);
             }
 
             this.registerForm.disable();
@@ -273,20 +274,53 @@ export class MainRegisterPage implements OnInit {
     }
   }
 
-  removePhoto(id: number): void {
-    this.saveInSessionService.removePhotoData(id);
+  async removePhoto(id: number) {
+    const alert = await this.alertController.create({
+      header: 'Advertencia',
+      message: 'Desear eliminar la foto?',
+      cssClass: 'warning-alert',
+      buttons: [
+        {
+          text: 'Eliminar',
+          handler: () => {
+            this.saveInSessionService.removePhotoData(id);
+            alert.dismiss();
+          },
+        },
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+        }
+      ],
+    });
+
+    await alert.present();
   }
 
-  removeAttached(id: number): void {
-    this.saveInSessionService.removeAttachedData(id);
-  }
+  async removeAttached(id: number) {
+    const alert = await this.alertController.create({
+      header: 'Advertencia',
+      message: 'Desear eliminar el anexo?',
+      cssClass: 'warning-alert',
+      buttons: [
+        {
+          text: 'Eliminar',
+          handler: () => {
+            this.saveInSessionService.removeAttachedData(id);
+            alert.dismiss();
+          },
+        },
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+        }
+      ],
+    });
 
-  async showLoading() {
-    this.loading = await this.loadingController.create();
-    await this.loading.present();
-  }
+    alert.onDidDismiss().then(() => {
+      this.saveInSessionService.removeAttachedData(id);
+    });
 
-  async hideLoading() {
-    await this.loading.dismiss();
+    await alert.present();
   }
 }

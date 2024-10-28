@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   IonContent,
+  IonProgressBar,
   IonHeader,
   IonTitle,
   IonToolbar,
@@ -19,7 +20,6 @@ import {
   IonLabel,
   IonButton,
   IonIcon,
-  LoadingController,
 } from '@ionic/angular/standalone';
 import { RouterLinkWithHref } from '@angular/router';
 import { addIcons } from 'ionicons';
@@ -28,6 +28,7 @@ import { UserService } from '../../../menu/services/user.service';
 import { LocalStorageService } from '../../../../core/services/local-storage.service';
 import { forkJoin } from 'rxjs';
 import { ConnectivityService } from '../../../../shared/services/connectivity.service';
+import { SaveInSessionService } from '../../../../shared/services/save-in-session.service';
 
 @Component({
   selector: 'app-select-institution',
@@ -36,6 +37,7 @@ import { ConnectivityService } from '../../../../shared/services/connectivity.se
   standalone: true,
   imports: [
     IonList,
+    IonProgressBar,
     IonLabel,
     IonCard,
     IonButton,
@@ -59,26 +61,28 @@ import { ConnectivityService } from '../../../../shared/services/connectivity.se
 })
 export class SelectInstitutionPage implements OnInit {
   isOnline: WritableSignal<boolean> = signal(true);
+  isLoading: boolean = false;
 
   tutorInfo: any;
   zonesList: any[] = [];
-  loading!: HTMLIonLoadingElement;
+  accordionValues: string[] = [];
 
   constructor(
     private userService: UserService,
     private localStorageSv: LocalStorageService,
-    private loadingController: LoadingController,
-    private connectivityService: ConnectivityService
+    private connectivityService: ConnectivityService,
+    private saveInSessionService: SaveInSessionService
   ) {
     addIcons({ documentTextOutline });
     this.isOnline = connectivityService.getNetworkStatus();
   }
 
   async ngOnInit() {
+    this.saveInSessionService.cleanAllData();
     const idUser = this.localStorageSv.getItem('USER_ID');
     if (idUser) {
       if(this.isOnline()){
-        this.showLoading();
+        this.isLoading = true;
         this.getCompleteData(idUser);
       } else {
         await this.getOfflineUserData(idUser);
@@ -93,6 +97,7 @@ export class SelectInstitutionPage implements OnInit {
     forkJoin([userInfo, zonesWithSedes]).subscribe({
       next: ([userInfo, zonesWithSedes]) => {
         this.tutorInfo = userInfo;
+        console.log(zonesWithSedes)
         this.zonesList = zonesWithSedes.map((zone: any) => {
           const ofGroups = zone.officesGroups;
           const sedes = ofGroups.flatMap((group: any) => group.groupOffices);
@@ -101,11 +106,12 @@ export class SelectInstitutionPage implements OnInit {
             sedes,
           };
         });
-        this.hideLoading();
+        this.accordionValues = this.zonesList.map((zone) => zone.id);
+        this.isLoading = false;
       },
       error: (error) => {
+        this.isLoading = false;
         console.log(error);
-        this.hideLoading();
       },
     });
   }
@@ -125,17 +131,9 @@ export class SelectInstitutionPage implements OnInit {
           sedes,
         };
       });
+      this.accordionValues = this.zonesList.map((zone) => zone.uuid);
     } catch (error: any) {
       console.log(error);
     }
-  }
-
-  async showLoading() {
-    this.loading = await this.loadingController.create();
-    await this.loading.present();
-  }
-
-  async hideLoading() {
-    await this.loading.dismiss();
   }
 }

@@ -6,6 +6,9 @@
       ></ion-back-button>
     </ion-buttons>
     <ion-title>Anexo</ion-title>
+    @if(isLoading){
+      <ion-progress-bar type="indeterminate" color="light"></ion-progress-bar>
+    }
     <ion-buttons slot="start">
       <ion-button>
         <ion-icon name="document-attach-outline"></ion-icon>
@@ -15,89 +18,101 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <section class="ion-margin">
-    @if(croppedImage()){ @if(!attachId){
-    <ion-select
-      class="ion-margin-bottom"
-      label="Estilo"
-      labelPlacement="floating"
-      fill="outline"
-      [formControl]="color"
-      (ionChange)="changeColor()"
-    >
-      <ion-select-option value="grayscale">Blanco y negro</ion-select-option>
-      <ion-select-option value="sepia">Sepia</ion-select-option>
-      <ion-select-option value="color">Color</ion-select-option>
-    </ion-select>
-    }
-    <div class="ion-margin-bottom">
-      <img alt="scanPhoto" #image [src]="croppedImage()" />
-    </div>
-    } @if(fileSrc) {
-    <ion-item>
-      <ion-label>Anexo cargado:</ion-label>
-      <a [href]="fileSrc" target="_blank">Ver documento</a>
-    </ion-item>
-    }
-    <div class="container-btns">
-      <div class="file-button">
-        <ion-button expand="block" [disabled]="attachId">
-          <ion-icon slot="start" name="cloud-upload"></ion-icon>
-          Cargar anexo
-        </ion-button>
+  @if(!isLoading){
+    <section class="ion-margin">
+      @if(scanImgSrc){
         @if(!attachId){
-        <input
-          title="Cargar anexo"
-          type="file"
-          class="file-input"
-          (change)="onFileSelected($event)"
-          accept=".pdf, .jpg, .jpeg, .png, .svg"
-        />
+          <ion-select
+            class="ion-margin-bottom"
+            label="Estilo"
+            labelPlacement="floating"
+            fill="outline"
+            [formControl]="color"
+            (ionChange)="changeColor()"
+          >
+            <ion-select-option value="grayscale">Blanco y negro</ion-select-option>
+            <ion-select-option value="sepia">Sepia</ion-select-option>
+            <ion-select-option value="color">Color</ion-select-option>
+          </ion-select>
         }
-      </div>
-      <ion-button expand="block" [disabled]="attachId" (click)="scan()">
-        <ion-icon slot="start" name="scan-circle-outline"></ion-icon>
-        Escanear
-      </ion-button>
-    </div>
-    <form
-      [formGroup]="attachedForm"
-      class="form-container"
-      (ngSubmit)="saveAttached()"
-    >
-      <ion-input
-        label="Nombre *"
-        label-placement="floating"
-        fill="outline"
-        type="text"
-        class="ion-margin-bottom"
-        formControlName="name"
-        errorText="Campo obligatorio (max 250 caracteres)"
-        [counter]="true"
-        maxlength="250"
-      ></ion-input>
-      <ion-textarea
-        label="Descripción *"
-        label-placement="floating"
-        fill="outline"
-        type="text"
-        class="ion-margin-bottom"
-        [autoGrow]="true"
-        formControlName="description"
-        errorText="Campo obligatorio (max 500 caracteres)"
-        [counter]="true"
-        maxlength="500"
-      ></ion-textarea>
-      <div class="btn-container">
-        <ion-button
-          type="submit"
-          expand="block"
-          [disabled]="!attachedForm.valid || attachId || (!fileSrc && !croppedImage())"
-        >
-          <ion-icon slot="start" name="document-attach-outline"></ion-icon>
-          Guardar Anexo
-        </ion-button>
-      </div>
-    </form>
-  </section>
+        <div class="ion-margin-bottom">
+          <ion-img alt="scanPhoto" [src]="scanImgSrc" />
+        </div>
+      }
+      @if(loadFileSrc) {
+        <ion-item>
+          <ion-label>Anexo cargado:</ion-label>
+          @if(annexLocalPath){
+            <a (click)="openFile()" target="_blank">Ver anexo</a>
+          } @else {
+            <a [href]="loadFileSrc" target="_blank">Ver anexo</a>
+          }
+        </ion-item>
+      }
+
+      @if(!attachId){
+        <div class="container-btns">
+          <div class="file-button">
+            <ion-button expand="block" [disabled]="attachId">
+              <ion-icon slot="start" name="cloud-upload"></ion-icon>
+              Cargar anexo
+            </ion-button>
+            <input
+              title="Cargar anexo"
+              type="file"
+              class="file-input"
+              (change)="onFileSelected($event)"
+              accept=".pdf, .jpg, .jpeg, .png, .svg"
+            />
+          </div>
+          <ion-button expand="block" [disabled]="attachId" (click)="scan()">
+            <ion-icon slot="start" name="scan-circle-outline"></ion-icon>
+            Escanear
+          </ion-button>
+        </div>
+      }
+
+      <form
+        [formGroup]="attachedForm"
+        class="form-container"
+        (ngSubmit)="saveAttached()"
+      >
+        <ion-input
+          label="Nombre *"
+          label-placement="floating"
+          fill="outline"
+          type="text"
+          class="ion-margin-bottom"
+          formControlName="name"
+          errorText="Campo obligatorio (max 250 caracteres)"
+          [counter]="true"
+          maxlength="250"
+        ></ion-input>
+        <ion-textarea
+          label="Descripción *"
+          label-placement="floating"
+          fill="outline"
+          type="text"
+          class="ion-margin-bottom"
+          [autoGrow]="true"
+          formControlName="description"
+          errorText="Campo obligatorio (max 500 caracteres)"
+          [counter]="true"
+          maxlength="500"
+        ></ion-textarea>
+        @if(!attachId){
+          <div class="btn-container">
+            <ion-button
+              type="submit"
+              expand="block"
+              [disabled]="!attachedForm.valid || (!loadFileSrc && !scanImgSrc)"
+            >
+              <ion-icon slot="start" name="document-attach-outline"></ion-icon>
+              Guardar Anexo
+            </ion-button>
+          </div>
+        }
+      </form>
+    </section>
+  }
 </ion-content>

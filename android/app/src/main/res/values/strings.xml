@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">cpe-mobile</string>
-    <string name="title_activity_main">cpe-mobile</string>
-    <string name="package_name">io.ionic.starter</string>
-    <string name="custom_url_scheme">io.ionic.starter</string>
+    <string name="app_name">INNOM@KER</string>
+    <string name="title_activity_main">INNOM@KER</string>
+    <string name="package_name">com.cpe.innomaker</string>
+    <string name="custom_url_scheme">com.cpe.innomaker</string>
 </resources>

@@ -1,7 +1,5 @@
-.title {
-  font-size: 1rem;
-  text-align: center;
-  font-weight: bold;
+* {
+  font-size: 1.15rem;
 }
 
 .second-toolbar {
@@ -16,7 +14,7 @@
 ion-card-title {
   text-align: center;
   text-transform: capitalize;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: bold;
 }
 
@@ -36,7 +34,7 @@ ion-accordion-group {
 
 .label {
   color: var(--ion-color-primary);
-  font-size: 14px;
+  font-size: 1rem;
 }
 
 ion-toolbar {
@@ -49,4 +47,10 @@ ion-toolbar {
       font-size: 2rem;
     }
   }
+}
+
+.title {
+  font-size: 1rem;
+  text-align: center;
+  font-weight: bold;
 }

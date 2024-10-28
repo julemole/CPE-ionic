@@ -1,41 +1,69 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, signal, WritableSignal } from '@angular/core';
 import { Platform } from '@ionic/angular/standalone';
-import { firstValueFrom, map, Observable } from 'rxjs';
+import { firstValueFrom, map, mergeMap, Observable, of, reduce } from 'rxjs';
 import { PhotoData } from 'src/app/shared/models/save-in-session.interface';
 import { environment } from 'src/environments/environment';
 import { attachedData } from '../../../shared/models/save-in-session.interface';
 import { DatabaseService } from 'src/app/shared/services/database.service';
 import { Annex, Evidence, Register } from 'src/app/shared/models/entity.interface';
 import { saveFileInDevice } from 'src/app/shared/utils/functions';
+import { ConnectivityService } from '../../../shared/services/connectivity.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RegistersService {
+  isOnline: WritableSignal<boolean> = signal(true);
 
   private API_URL = environment.apiUrl;
   private HOST = environment.host;
 
-  constructor(private http: HttpClient, private plaftorm: Platform, private dbService: DatabaseService) { }
+  constructor(private http: HttpClient, private plaftorm: Platform, private dbService: DatabaseService, private connectivityService: ConnectivityService) {
+    this.isOnline = this.connectivityService.getNetworkStatus();
+  }
 
-  getRegistersByUser(userId: string): Observable<any> {
+  getRegistersByUser(userId: string): Observable<any[]> {
+    const URL = `${this.API_URL}/node/registry?sort=-created`;
     const params = new HttpParams()
       .set('filter[uid.id][value]', userId)
-      .set('include', 'field_sede')
-    return this.http.get(`${this.API_URL}/node/registry`, {params}).pipe(
-      map((resp: any) => {
-        return resp.data.map((item: any) => {
-          const sedeId = item.relationships.field_sede.data ? item.relationships.field_sede.data.id : '';
-          const sede = sedeId ? resp.included.find((item: any) => item.id === sedeId).attributes.name : '';
-          return {
-            id: item.id,
-            created: item.attributes.created,
-            sede
+      .set('include', 'field_sede');
+
+    const fetchRegistersPage = (url: string, params: HttpParams): Observable<any[]> => {
+      return this.http.get(url, { params }).pipe(
+        mergeMap((resp: any) => {
+          const items = resp.data.map((item: any) => {
+            const sedeId = item.relationships.field_sede.data ? item.relationships.field_sede.data.id : '';
+            const sede = sedeId ? resp.included.find((includedItem: any) => includedItem.id === sedeId).attributes.title : '';
+
+            return {
+              id: item.id,
+              created: item.attributes.created,
+              sede,
+            };
+          });
+
+          if (resp.links && resp.links.next) {
+            // Si hay una siguiente página, hacer la siguiente solicitud
+            return fetchRegistersPage(resp.links.next.href, params).pipe(
+              map(nextItems => items.concat(nextItems))
+            );
+          } else {
+            // No hay más páginas, retornar los elementos actuales
+            return of(items);
           }
         })
-      })
-    )
+      );
+    };
+
+    // Empezar a traer los datos desde la primera página
+    return fetchRegistersPage(URL, params).pipe(
+      reduce((acc: any[], items) => {
+        const uniqueItems = new Map(acc.map(item => [item.id, item]));
+        items.forEach(item => uniqueItems.set(item.id, item));
+        return Array.from(uniqueItems.values());
+      }, []) // Acumular todos los elementos en un solo array sin duplicados
+    );
   }
 
   async getRegistersByUserOffline(userId: string) {
@@ -56,6 +84,9 @@ export class RegistersService {
       map((resp: any) => {
         const data = resp.data;
         const included = resp.included;
+
+        const idSede = data.relationships.field_sede.data ? data.relationships.field_sede.data.id : '';
+        const sede = idSede ? included.find((item: any) => item.id === idSede).attributes.title : '';
 
         const idSignature = data.relationships.field_signature.data?.id;
         let signature = included.find((item: any) => item.id === idSignature);
@@ -80,6 +111,7 @@ export class RegistersService {
 
         return {
           ...data,
+          sede,
           signature,
           annexList: annex,
           evidenceList: evidence
@@ -119,7 +151,7 @@ export class RegistersService {
 
   async getEvidenceByIdOffline(id: string) {
     try {
-      const evidence = await this.dbService.getEvidenceById(id);
+      const evidence = this.isOnline() ? await this.dbService.getEvidenceByServerId(id) : await this.dbService.getEvidenceById(id);
       return evidence;
     } catch (error) {
       throw new Error('Error al obtener la evidencia');
@@ -147,7 +179,7 @@ export class RegistersService {
 
   async getAnnexByIdOffline(id: string) {
     try {
-      const annex = await this.dbService.getAnnexById(id);
+      const annex = this.isOnline() ? await this.dbService.getAnnexByServerId(id)  : await this.dbService.getAnnexById(id)
       return annex;
     } catch (error) {
       throw new Error('Error al obtener el anexo');
@@ -211,28 +243,26 @@ export class RegistersService {
         map(resp => resp.data)
       ));
       if (objToUpdate) {
-        console.log('resp img',response)
         objToUpdate.idFile = response.id;
-        console.log(objToUpdate)
       }
       return response;
     } catch (error) {
-      console.error('Error al subir el archivo:', error);
+      console.error('Error al subir el archivooooooooooooooooooooooooooooooooooooooooooooo:', JSON.stringify(error));
       throw error;
     }
   }
 
-  async createEvidence(photoData: PhotoData, csrfToken: string) {
+  async createEvidence(photoData: PhotoData, csrfToken: string, isFromLocal: boolean = false) {
     const payload = {
       data: {
         type: 'node--evidence',
         attributes: {
           title: photoData.name,
           field_description: photoData.description,
-          field_evidence_date: photoData.date,
-          field_evidence_time: photoData.time,
-          field_latitude: photoData.latitude,
-          field_longitude: photoData.longitude,
+          field_evidence_date: photoData.date || '',
+          field_evidence_time: photoData.time || '',
+          field_latitude: photoData.latitude || '',
+          field_longitude: photoData.longitude || '',
         },
         relationships: {
           field_image: {
@@ -256,13 +286,14 @@ export class RegistersService {
     try {
       const response = await firstValueFrom(this.http.post<any>(URL, payload, httpOptions));
       photoData.idEvidence = response.data.id;
-      if (this.plaftorm.is('cordova') || this.plaftorm.is('capacitor')) {
+      if (this.plaftorm.is('hybrid') && !isFromLocal) {
         let filePath = '';
         if(photoData.file){
           filePath = await saveFileInDevice(photoData.file);
         }
         const evidence: Evidence = {
           uuid: response.data.id,
+          server_uuid: response.data.id,
           name: photoData.name,
           description: photoData.description,
           date_created: photoData.date,
@@ -276,9 +307,20 @@ export class RegistersService {
         await this.dbService.addEvidence(evidence);
       }
 
+      if(isFromLocal){
+        const evidence: Evidence = {
+          uuid: photoData.local_uuid!,
+          server_uuid: response.data.id,
+          name: photoData.name,
+          is_synced: 1,
+          status: 1,
+        }
+        await this.dbService.updateEvidence(evidence);
+      }
+
       return response;
     } catch (error) {
-      console.error('Error al crear la evidencia:', error);
+      console.error('Error al crear la evidenciaaaaaaaaaaaaaaaaaa:', JSON.stringify(error));
       throw error;
     }
   }
@@ -295,7 +337,7 @@ export class RegistersService {
     }
   }
 
-  async createAnnex(attachedData: attachedData, csrfToken: string) {
+  async createAnnex(attachedData: attachedData, csrfToken: string, isFromLocal: boolean = false) {
     const payload = {
       data: {
         type: 'node--annex',
@@ -327,24 +369,38 @@ export class RegistersService {
     try {
       const response = await firstValueFrom(this.http.post<any>(URL, payload, httpOptions));
       attachedData.idAnnex = response.data.id;
-      if (this.plaftorm.is('cordova') || this.plaftorm.is('capacitor')) {
+      if (this.plaftorm.is('hybrid') && !isFromLocal) {
         let filePath = '';
         if(attachedData.file){
           filePath = await saveFileInDevice(attachedData.file);
         }
         const annex: Annex = {
           uuid: response.data.id,
+          server_uuid: response.data.id,
           name: attachedData.name,
           description: attachedData.description,
+          date_created: response.data.attributes.created,
           file: filePath,
           is_synced: 1,
           status: 1,
         }
         await this.dbService.addAnnex(annex);
       }
+
+      if(isFromLocal){
+        const annex: Annex = {
+          uuid: attachedData.local_uuid!,
+          server_uuid: response.data.id,
+          name: attachedData.name,
+          is_synced: 1,
+          status: 1,
+        }
+        await this.dbService.updateAnnex(annex);
+      }
+
       return response;
     } catch (error) {
-      console.error('Error al crear el anexo:', error);
+      console.error('Error al crear el anexoooooooooooooooooooooooooooooooooooo:', JSON.stringify(error));
       throw error;
     }
   }
@@ -385,10 +441,10 @@ export class RegistersService {
     }
   }
 
-  async addEvidenceToRegister(registerId: string, evidenceId?: string) {
+  async addEvidenceToRegister(registerId: string, evidenceId?: string, is_synced: number = 1) {
     try {
       if(evidenceId){
-        await this.dbService.addEvidenceToRegister(registerId, evidenceId);
+        await this.dbService.addEvidenceToRegister(registerId, evidenceId, is_synced);
       }
     } catch (error) {
       console.error('Error al agregar la evidencia al registro:', error);
@@ -396,10 +452,10 @@ export class RegistersService {
     }
   }
 
-  async addAnnexToRegister(registerId: string, annexId?: string) {
+  async addAnnexToRegister(registerId: string, annexId?: string, is_synced: number = 1) {
     try {
       if(annexId){
-        await this.dbService.addAnnexToRegister(registerId, annexId);
+        await this.dbService.addAnnexToRegister(registerId, annexId, is_synced);
       }
     } catch (error) {
       console.error('Error al agregar el anexo al registro:', error);

@@ -6,6 +6,9 @@
       ></ion-back-button>
     </ion-buttons>
     <ion-title>Evidencia fotográfica</ion-title>
+    @if(isLoading){
+      <ion-progress-bar type="indeterminate" color="light"></ion-progress-bar>
+    }
     <ion-buttons slot="start">
       <ion-button>
         <ion-icon name="camera"></ion-icon>
@@ -15,88 +18,103 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <section class="ion-margin">
-    <div class="container-img">
-      @if(imageSrc) {
-      <ion-thumbnail slot="start" class="img">
-        <img alt="ejemplo" [src]="imageSrc" />
-      </ion-thumbnail>
-      }
-      <div class="container-btns" [class.flex-column]="imageSrc">
-        <div class="file-button">
-          <ion-button expand="block" [disabled]="photoId">
-            <ion-icon slot="start" name="cloud-upload"></ion-icon>
-            Cargar foto
-          </ion-button>
-          @if(!photoId){
-          <input
-            title="Cargar foto"
-            type="file"
-            class="file-input"
-            (change)="onFileSelected($event)"
-            accept=".jpg, .jpeg, .png, .svg"
-          />
-          }
-        </div>
-        <ion-button
-          expand="block"
-          (click)="captureImage()"
-          [disabled]="photoId"
-        >
-          <ion-icon slot="start" name="camera"></ion-icon>
-          Tomar foto
-        </ion-button>
-      </div>
-    </div>
-    <form
-      [formGroup]="photoForm"
-      class="form-container"
-      (ngSubmit)="savePhoto()"
-    >
-      <div class="w-100 ion-margin-bottom">
-        <ion-input
-          label="Nombre *"
-          placeholder="Escribe un nombre"
-          label-placement="floating"
-          fill="outline"
-          type="text"
-          formControlName="name"
-          [counter]="true"
-          maxlength="250"
-          errorText="Campo obligatorio (max 250 caracteres)"
-        ></ion-input>
-      </div>
-      <div class="w-100 ion-margin-bottom">
-        <ion-textarea
-          rows="3"
-          placeholder="Escribe aquí"
-          label="Descripción *"
-          label-placement="floating"
-          fill="outline"
-          type="text"
-          [autoGrow]="true"
-          [counter]="true"
-          maxlength="500"
-          formControlName="description"
-          errorText="Campo obligatorio (max 500 caracteres)"
-        ></ion-textarea>
-        @if((description.touched || description.dirty) &&
-        description.errors?.['maxlength']){
-        <div class="error-message">
-          <small>La descripción no puede tener más de 250 caracteres</small>
-        </div>
+  @if(!isLoading){
+    <section class="ion-margin">
+      <div class="container-img">
+        @if(imageSrc && !photoId) {
+        <ion-thumbnail slot="start" class="img">
+          <ion-img [src]="imageSrc" alt="Foto evidencia"></ion-img>
+        </ion-thumbnail>
+        }
+        @if(imageSrc && photoId) {
+          <ion-img [src]="imageSrc" alt="Foto evidencia"></ion-img>
+        }
+        @if(!photoId){
+          <div class="container-btns" [class.flex-column]="imageSrc">
+            <div class="file-button">
+              <ion-button expand="block" [disabled]="photoId">
+                <ion-icon slot="start" name="cloud-upload"></ion-icon>
+                Cargar foto
+              </ion-button>
+              <input
+                title="Cargar foto"
+                type="file"
+                class="file-input"
+                (change)="onFileSelected($event)"
+                accept=".jpg, .jpeg, .png, .svg"
+              />
+            </div>
+            <ion-button
+            expand="block"
+            (click)="captureImage()"
+            [disabled]="photoId"
+            >
+              <ion-icon slot="start" name="camera"></ion-icon>
+              Tomar foto
+            </ion-button>
+          </div>
         }
       </div>
-      <div class="btn-container">
-        <ion-button
-          type="submit"
-          expand="block"
-          [disabled]="!photoForm.valid || !imageSrc || photoId"
-        >
-          <ion-icon slot="start" name="camera"></ion-icon>
-          Guardar evidencia
-        </ion-button>
-      </div>
-    </form>
-  </section>
+      @if(imageSrc && photoId && evidenceLocalPath) {
+        <div class="ion-text-center">
+          <ion-button (click)="openFile()">
+            <ion-icon slot="start" name="download"></ion-icon>
+            Descargar
+          </ion-button>
+        </div>
+      }
+      <form
+        [formGroup]="photoForm"
+        class="form-container"
+        (ngSubmit)="savePhoto()"
+      >
+        <div class="w-100 ion-margin-bottom">
+          <ion-input
+            label="Nombre *"
+            placeholder="Escribe un nombre"
+            label-placement="floating"
+            fill="outline"
+            type="text"
+            formControlName="name"
+            [counter]="true"
+            maxlength="250"
+            errorText="Campo obligatorio (max 250 caracteres)"
+          ></ion-input>
+        </div>
+        <div class="w-100 ion-margin-bottom">
+          <ion-textarea
+            rows="3"
+            placeholder="Escribe aquí"
+            label="Descripción *"
+            label-placement="floating"
+            fill="outline"
+            type="text"
+            [autoGrow]="true"
+            [counter]="true"
+            maxlength="500"
+            formControlName="description"
+            errorText="Campo obligatorio (max 500 caracteres)"
+          ></ion-textarea>
+          @if((description.touched || description.dirty) &&
+          description.errors?.['maxlength']){
+          <div class="error-message">
+            <small>La descripción no puede tener más de 250 caracteres</small>
+          </div>
+          }
+        </div>
+        @if(!photoId){
+          <div class="btn-container">
+            <ion-button
+              type="submit"
+              expand="block"
+              [disabled]="!photoForm.valid || !imageSrc"
+            >
+              <ion-icon slot="start" name="camera"></ion-icon>
+              Guardar evidencia
+            </ion-button>
+          </div>
+        }
+      </form>
+    </section>
+  }
 </ion-content>

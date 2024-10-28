@@ -15,6 +15,7 @@ import {
 } from '@angular/forms';
 import {
   IonContent,
+  IonProgressBar,
   IonHeader,
   IonTitle,
   IonToolbar,
@@ -27,25 +28,28 @@ import {
   IonThumbnail,
   IonInput,
   IonButton,
-  IonIcon,
-} from '@ionic/angular/standalone';
+  IonIcon, IonImg } from '@ionic/angular/standalone';
 import { ActivatedRoute, RouterLinkWithHref } from '@angular/router';
 import { CameraService } from 'src/app/shared/services/camera.service';
 import { SaveInSessionService } from 'src/app/shared/services/save-in-session.service';
 import { addIcons } from 'ionicons';
-import { camera, cloudUpload } from 'ionicons/icons';
+import { camera, cloudUpload, download } from 'ionicons/icons';
 import { PhotoData } from 'src/app/shared/models/save-in-session.interface';
 import { RegistersService } from '../../services/registers.service';
 import { ConnectivityService } from '../../../../shared/services/connectivity.service';
+import { getInfoFile, loadSignatureFile } from 'src/app/shared/utils/functions';
+import { AlertController, Platform } from '@ionic/angular/standalone';
+import { FileOpener, FileOpenerOptions } from '@capacitor-community/file-opener';
 
 @Component({
   selector: 'app-add-photo',
   templateUrl: './add-photo.page.html',
   styleUrls: ['./add-photo.page.scss'],
   standalone: true,
-  imports: [
+  imports: [IonImg,
     IonIcon,
     IonButton,
+    IonProgressBar,
     IonInput,
     IonContent,
     IonHeader,
@@ -65,6 +69,7 @@ import { ConnectivityService } from '../../../../shared/services/connectivity.se
 })
 export class AddPhotoPage implements OnInit {
   isOnline: WritableSignal<boolean> = signal(true);
+  isLoading: boolean = false;
 
   fb: FormBuilder = inject(FormBuilder);
   photoForm: FormGroup = this.fb.group({
@@ -76,6 +81,7 @@ export class AddPhotoPage implements OnInit {
     longitude: [''],
   });
 
+  evidenceLocalPath: string = '';
   file: File | null = null;
   photoId: string = '';
   institutionId: string = '';
@@ -97,9 +103,11 @@ export class AddPhotoPage implements OnInit {
     private readonly cameraService: CameraService,
     private readonly saveInSessionService: SaveInSessionService,
     private registersService: RegistersService,
-    private connectivityService: ConnectivityService
+    private connectivityService: ConnectivityService,
+    private alertController: AlertController,
+    private platform: Platform,
   ) {
-    addIcons({ camera, cloudUpload });
+    addIcons({ camera, cloudUpload, download });
     this.isOnline = this.connectivityService.getNetworkStatus();
     this.photoData = this.saveInSessionService.getPhotoData();
   }
@@ -108,12 +116,14 @@ export class AddPhotoPage implements OnInit {
     this.photoId = this.aRoute.snapshot.params['idPhoto'];
     this.institutionId = this.aRoute.snapshot.params['idInstitution'];
     this.idRegister = this.aRoute.snapshot.params['idRegister'];
-    if (this.photoId) {
+    if (this.photoId && !this.idRegister) {
       this.loadPhotoData();
     }
 
     if (this.idRegister && this.photoId) {
-      if(this.isOnline()){
+      // if(this.isOnline()){
+      if(!this.platform.is('hybrid')) {
+        this.isLoading = true;
         this.registersService.getEvidenceById(this.photoId).subscribe({
           next: (resp) => {
             this.photoForm.patchValue({
@@ -122,6 +132,11 @@ export class AddPhotoPage implements OnInit {
             });
             this.photoForm.disable();
             this.imageSrc = resp.fileUrl;
+            this.isLoading = false;
+          },
+          error: (error) => {
+            this.isLoading = false;
+            console.error(error);
           },
         });
       } else {
@@ -139,16 +154,39 @@ export class AddPhotoPage implements OnInit {
           description: evidence.description,
         });
         this.photoForm.disable();
-        this.imageSrc = evidence.file!;
+        this.evidenceLocalPath = evidence.file!;
+        this.imageSrc = await loadSignatureFile(evidence.file!);
       }
     } catch (error) {
       throw new Error('Error al obtener la evidencia');
     }
   }
 
+  async openFile() {
+    try {
+      const infoFile = await getInfoFile(this.evidenceLocalPath);
+
+      const fileOpenerOptions: FileOpenerOptions = {
+        filePath: this.evidenceLocalPath,
+        contentType:  infoFile.mimeType,
+        openWithDefault: true,
+      };
+      await FileOpener.open(fileOpenerOptions);
+    } catch (error) {
+      console.error('Error al abrir el archivo:', JSON.stringify(error));
+    }
+  }
+
   async captureImage() {
     const locationData = await this.cameraService.takePictureAndGetData();
     this.imageSrc = locationData.imagePath;
+    const maxSizeInMB = 2;
+    const file = locationData.file;
+    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+    if (file.size > maxSizeInBytes) {
+      await this.alert('El archivo no debe pesar más de 2MB.');
+      return;
+    }
     this.file = locationData.file;
     this.photoForm.patchValue({
       date: locationData.date,
@@ -162,6 +200,13 @@ export class AddPhotoPage implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
+
+      const maxSizeInMB = 2;
+      const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+      if (file.size > maxSizeInBytes) {
+        await this.alert('El archivo no debe pesar más de 2MB.');
+        return;
+      }
       this.file = file;
       const reader = new FileReader();
       reader.onload = async () => {
@@ -175,13 +220,6 @@ export class AddPhotoPage implements OnInit {
           latitude: locationData.latitude,
           longitude: locationData.longitude,
         });
-
-        // if (locationData.latitude && locationData.longitude) {
-        //   const approximateLocation = await this.cameraService.getApproximateLocation(locationData.latitude, locationData.longitude);
-        //   this.photoForm.controls['location'].setValue(approximateLocation);
-        // } else {
-        //   this.photoForm.controls['location'].setValue('Ubicación desconocida');
-        // }
       };
       reader.readAsDataURL(file);
     }
@@ -230,4 +268,21 @@ export class AddPhotoPage implements OnInit {
       this.photoForm.disable();
     }
   }
+
+  async alert(message: string) {
+    const alert = await this.alertController.create({
+      header: 'Error',
+      cssClass: 'error-alert',
+      message,
+      buttons: [
+        {
+          text: 'Ok',
+        },
+      ],
+    });
+
+    await alert.present();
+  }
 }
+
+

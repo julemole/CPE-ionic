@@ -123,7 +123,6 @@ export class RecoverPassPage {
   }
 
   async hideLoading() {
-    console.log(this.loading);
     if (this.loading) {
       await this.loading.dismiss();
       this.loading = null;

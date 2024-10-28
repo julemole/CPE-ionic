@@ -12,40 +12,23 @@ import { blobToFile } from 'src/app/shared/utils/functions';
 export class CameraService {
   constructor(private readonly dbService: DatabaseService) {}
 
-  async takePicture() {
-    const image = await Camera.getPhoto({
-      resultType: CameraResultType.Uri,
-      source: CameraSource.Camera,
-      quality: 100
-    });
-
-    const imagePath = image.webPath;
-
-    try {
-      const position = await Geolocation.getCurrentPosition();
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
-
-      // Guardar la imagen junto con la ubicación en la base de datos
-      // await this.dbService.addImage(imagePath!, latitude, longitude);
-    } catch (error) {
-      console.error('Error obteniendo la geolocalización', error);
-      // Guardar la imagen sin la ubicación en la base de datos
-      // await this.dbService.addImage(imagePath!, null, null);
-    }
-  }
-
+  /*
+    * Tomar una foto y obtener la información de la misma
+    * @returns Objeto con la URL de la imagen, el archivo, la latitud, longitud, fecha y hora de la imagen
+  */
   async takePictureAndGetData(): Promise<{ imagePath: string, file: File, latitude: number | null, longitude: number | null, date: string, time: string }> {
     const image = await Camera.getPhoto({
       resultType: CameraResultType.Uri,
       source: CameraSource.Camera,
-      quality: 100
+      quality: 80
     });
 
     const imagePath = image.webPath;
     const response = await fetch(imagePath!);
     const blob = await response.blob();
-    const file = blobToFile(blob, 'image.jpg');
+    const timestamp = new Date().getTime();
+    const fileName = `image_${timestamp}.jpg`;
+    const file = blobToFile(blob, fileName);
 
     try {
       const position = await Geolocation.getCurrentPosition();
@@ -64,21 +47,11 @@ export class CameraService {
     }
   }
 
-  async saveLocalImage(imagePath: string) {
-    try {
-      // Obtener la ubicación actual
-      const position = await Geolocation.getCurrentPosition();
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
-
-      // Guardar la imagen junto con la ubicación en la base de datos
-      // await this.dbService.addImage(imagePath, latitude, longitude);
-    } catch (error) {
-      console.error('Error obteniendo la geolocalización', error);
-      // Guardar la imagen sin la ubicación en la base de datos
-      // await this.dbService.addImage(imagePath, null, null);
-    }
-  }
+  /*
+    * Obtener la ubicación y la fecha de una imagen
+    * @param imageSrc URL de la imagen
+    * @returns Objeto con la latitud, longitud, fecha y hora de la imagen
+  */
 
   async getLocationForImage(imageSrc: string): Promise<{ latitude: number | null, longitude: number | null, date: string, time: string }> {
     try {
@@ -90,13 +63,11 @@ export class CameraService {
       let date = null;
       let time = null;
 
-      // Intentar obtener la ubicación de los metadatos EXIF
       if (tags.GPSLatitude && tags.GPSLongitude && tags.GPSLatitudeRef && tags.GPSLongitudeRef) {
         latitude = this.convertDMSToDD(tags.GPSLatitude.description, tags.GPSLatitudeRef.description);
         longitude = this.convertDMSToDD(tags.GPSLongitude.description, tags.GPSLongitudeRef.description);
       }
 
-      // Intentar obtener la fecha y hora de los metadatos EXIF
       if (tags.DateTime) {
         const timestamp = tags.DateTime.description;
         const [datePart, timePart] = timestamp.split(' ');
@@ -122,6 +93,10 @@ export class CameraService {
     }
   }
 
+  /**
+   * Obtener la ubicación actual
+   * @returns Objeto con la latitud, longitud, fecha y hora actuales
+  */
   async getCurrentLocation(): Promise<{ latitude: number | null, longitude: number | null, date: string, time: string }> {
     try {
       const position = await Geolocation.getCurrentPosition();
@@ -140,6 +115,12 @@ export class CameraService {
     }
   }
 
+  /*
+    * Convertir coordenadas en grados, minutos y segundos a grados decimales
+    * @param dms Coordenadas en grados, minutos y segundos
+    * @param ref Referencia de la dirección (Norte, Sur, Este, Oeste)
+    * @returns Coordenadas en grados decimales
+  */
   convertDMSToDD(dms: number, ref: string): number {
     const refDescription = ref.toLowerCase();
     if (refDescription.includes('south') || refDescription.includes('west')) {

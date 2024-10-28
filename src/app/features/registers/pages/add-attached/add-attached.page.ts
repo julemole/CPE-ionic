@@ -1,7 +1,6 @@
 import { attachedData } from './../../../../shared/models/save-in-session.interface';
 import {
   Component,
-  effect,
   inject,
   OnInit,
   signal,
@@ -17,6 +16,7 @@ import {
 } from '@angular/forms';
 import {
   IonContent,
+  IonProgressBar,
   IonHeader,
   IonTitle,
   IonToolbar,
@@ -32,34 +32,34 @@ import {
   IonSelect,
   IonSelectOption,
   IonItem,
-  IonLabel,
-} from '@ionic/angular/standalone';
-import { ActivatedRoute, Router, RouterLinkWithHref } from '@angular/router';
+  IonLabel, IonImg } from '@ionic/angular/standalone';
+import { ActivatedRoute, RouterLinkWithHref } from '@angular/router';
 import { addIcons } from 'ionicons';
 import {
   documentAttachOutline,
   cloudUpload,
   scanCircleOutline,
 } from 'ionicons/icons';
-import { Camera, CameraResultType } from '@capacitor/camera';
-import { ImageCropperComponent, ImageTransform } from 'ngx-image-cropper';
-import { Capacitor } from '@capacitor/core';
 import { SaveInSessionService } from 'src/app/shared/services/save-in-session.service';
-import { base64ToBlob, blobToFile } from 'src/app/shared/utils/functions';
+import { getInfoFile, loadSignatureFile } from 'src/app/shared/utils/functions';
 import { RegistersService } from '../../services/registers.service';
 import { ConnectivityService } from '../../../../shared/services/connectivity.service';
+import { CameraService } from 'src/app/shared/services/camera.service';
+import { AlertController, Platform } from '@ionic/angular/standalone';
+import { FileOpener, FileOpenerOptions } from '@capacitor-community/file-opener';
+
 
 @Component({
   selector: 'app-add-attached',
   templateUrl: './add-attached.page.html',
   styleUrls: ['./add-attached.page.scss'],
   standalone: true,
-  imports: [
+  imports: [IonImg,
     IonItem,
+    IonProgressBar,
     IonLabel,
     IonIcon,
     IonButton,
-    ImageCropperComponent,
     IonInput,
     IonContent,
     IonHeader,
@@ -79,8 +79,8 @@ import { ConnectivityService } from '../../../../shared/services/connectivity.se
   ],
 })
 export class AddAttachedPage implements OnInit {
-  // isMobile = Capacitor.getPlatform() !== 'web';
   isOnline: WritableSignal<boolean> = signal(true);
+  isLoading: boolean = false;
 
   fb: FormBuilder = inject(FormBuilder);
   attachedForm: FormGroup = this.fb.group({
@@ -90,14 +90,11 @@ export class AddAttachedPage implements OnInit {
 
   color: FormControl = new FormControl('');
 
-  imageChangedEvent: any = '';
-  croppedImage: WritableSignal<string> = signal<string>('');
-  blobCropImg: WritableSignal<Blob> = signal<Blob>(new Blob());
-  originalImage: WritableSignal<string> = signal<string>('');
-  transform: ImageTransform = {};
-
   file: File | null = null;
-  fileSrc: string = '';
+  scanImgSrc: string | null = null;
+  originalImageData: any;
+  loadFileSrc: string = '';
+  annexLocalPath: string = '';
   institutionId: string = '';
   attachId: string = '';
   idRegister: string = '';
@@ -106,23 +103,16 @@ export class AddAttachedPage implements OnInit {
 
   constructor(
     private aRoute: ActivatedRoute,
-    private router: Router,
     private saveInSessionService: SaveInSessionService,
     private registersService: RegistersService,
-    private connectivityService: ConnectivityService
+    private connectivityService: ConnectivityService,
+    private cameraService: CameraService,
+    private alertController: AlertController,
+    private platform: Platform
   ) {
     addIcons({ documentAttachOutline, cloudUpload, scanCircleOutline });
     this.isOnline = this.connectivityService.getNetworkStatus();
     this.attachedData = this.saveInSessionService.getAttachedData();
-    this.croppedImage = this.saveInSessionService.getAttachImg();
-    this.blobCropImg = this.saveInSessionService.getBlobAttachImg();
-    this.originalImage = this.saveInSessionService.getOriginalAttachImg();
-
-    effect(() => {
-      const currentValue = this.blobCropImg();
-      const file = blobToFile(currentValue, 'image.png');
-      this.file = file;
-    });
   }
 
   async ngOnInit() {
@@ -132,29 +122,38 @@ export class AddAttachedPage implements OnInit {
     if (this.attachId) {
       this.loadAttachedData();
     } else {
-      this.croppedImage.set('');
+      this.scanImgSrc = '';
     }
 
     if (this.idRegister && this.attachId) {
-      if(this.isOnline()){
+      this.scanImgSrc = '';
+      // if(this.isOnline()){
+      if(!this.platform.is('hybrid')){
+        this.isLoading = true;
+        this.scanImgSrc = '';
         this.registersService.getAnnexById(this.attachId).subscribe({
           next: (resp) => {
-            console.log(resp);
             this.attachedForm.patchValue({
               name: resp.attributes.title,
               description: resp.attributes.field_description,
             });
             this.attachedForm.disable();
-            this.fileSrc = resp.fileUrl;
+            this.loadFileSrc = resp.fileUrl;
+            this.isLoading = false;
+          },
+          error: (error) => {
+            this.isLoading = false;
+            console.error(error);
           },
         });
       } else {
-        await this.getOfflineEvidence();
+        this.scanImgSrc = '';
+        await this.getOfflineAnnex();
       }
     }
   }
 
-  async getOfflineEvidence() {
+  async getOfflineAnnex() {
     try {
       const annex = await this.registersService.getAnnexByIdOffline(this.attachId);
       if (annex) {
@@ -163,10 +162,27 @@ export class AddAttachedPage implements OnInit {
           description: annex.description,
         });
         this.attachedForm.disable();
-        this.fileSrc = annex.file!;
+        this.annexLocalPath = annex.file!;
+        const file = await loadSignatureFile(annex.file!);
+        this.loadFileSrc = file!;
       }
     } catch (error) {
       console.error(error);
+    }
+  }
+
+  async openFile() {
+    try {
+      const infoFile = await getInfoFile(this.annexLocalPath);
+
+      const fileOpenerOptions: FileOpenerOptions = {
+        filePath: this.annexLocalPath,
+        contentType:  infoFile.mimeType,
+        openWithDefault: true,
+      };
+      await FileOpener.open(fileOpenerOptions);
+    } catch (error) {
+      console.error('Error al abrir el archivo:', JSON.stringify(error));
     }
   }
 
@@ -188,8 +204,8 @@ export class AddAttachedPage implements OnInit {
       name,
       description,
       file: this.file,
-      url: this.fileSrc || this.croppedImage(),
-      urlType: this.fileSrc ? 'doc' : 'img',
+      url: this.loadFileSrc || this.scanImgSrc,
+      urlType: this.loadFileSrc ? 'doc' : 'img',
     };
 
     this.saveInSessionService.saveAttachedData(
@@ -206,13 +222,12 @@ export class AddAttachedPage implements OnInit {
     if (currentAttachedData) {
       this.attachedForm.patchValue(currentAttachedData);
       if (currentAttachedData.urlType === 'doc') {
-        this.fileSrc = currentAttachedData.url!;
-        this.saveInSessionService.saveAttachImg('');
+        this.loadFileSrc = currentAttachedData.url!;
+        this.scanImgSrc = '';
       } else {
-        this.saveInSessionService.saveAttachImg(currentAttachedData.url!);
-        this.fileSrc = '';
+        this.scanImgSrc = currentAttachedData.url!;
+        this.loadFileSrc = '';
       }
-      // currentAttachedData.urlType === 'doc' ? this.fileSrc = currentAttachedData.url! : this.saveInSessionService.saveAttachImg(currentAttachedData.url!);
       this.attachedForm.disable();
     }
   }
@@ -231,48 +246,45 @@ export class AddAttachedPage implements OnInit {
     }
   }
 
-  onFileSelected(event: any) {
+  async onFileSelected(event: any) {
     const file: File = event.target.files[0];
+
+    const maxSizeInMB = 2;
+    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+    if (file.size > maxSizeInBytes) {
+      await this.alert('El archivo no debe pesar más de 2MB.');
+      return;
+    }
 
     if (file) {
       this.file = file;
       const fileUrl = URL.createObjectURL(file);
-      this.fileSrc = fileUrl;
-      this.saveInSessionService.saveAttachImg('', '', true);
+      this.loadFileSrc = fileUrl;
     }
   }
 
+
   async scan() {
-    const image = await Camera.getPhoto({
-      quality: 100,
-      allowEditing: true,
-      resultType: CameraResultType.Base64,
-    });
-
-    const myImage = `data:image/jpeg;base64,${image.base64String}`;
-
-    if (image && myImage) {
-      const img = new Image();
-      img.onload = () => {
-        const width = img.width;
-        const height = img.height;
-        this.fileSrc = '';
-        this.saveInSessionService.saveAttachImgB64(
-          myImage,
-          width,
-          height,
-          `/registers/add/select-institution/${this.institutionId}/cropper`
-        );
-      };
-      img.src = myImage;
+    const locationData = await this.cameraService.takePictureAndGetData();
+    this.originalImageData = locationData;
+    this.scanImgSrc = locationData.imagePath;
+    const maxSizeInMB = 2;
+    const file = locationData.file;
+    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+    if (file.size > maxSizeInBytes) {
+      await this.alert('El archivo no debe pesar más de 2MB.');
+      return;
     }
+    this.file = locationData.file;
+    this.color.setValue('grayscale');
+    this.convertImage('grayscale');
   }
 
   convertImage(filterType: string) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    img.src = this.croppedImage();
+    img.src = this.scanImgSrc!;
 
     if (ctx) {
       img.onload = () => {
@@ -283,6 +295,7 @@ export class AddAttachedPage implements OnInit {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
 
+        // Aplicar filtro seleccionado
         switch (filterType) {
           case 'grayscale':
             for (let i = 0; i < data.length; i += 4) {
@@ -308,14 +321,39 @@ export class AddAttachedPage implements OnInit {
         }
 
         ctx.putImageData(imageData, 0, 0);
-        this.saveInSessionService.saveAttachImg(canvas.toDataURL('image/png'));
+
+        // Comprimir la imagen a JPEG con calidad ajustada
+        canvas.toBlob((blob) => {
+          if (blob && this.file) {
+            const newFile = new File([blob], this.file.name, { type: 'image/jpeg' });
+            this.file = newFile;
+
+            // Actualizar la fuente de la imagen para mostrar la versión comprimida
+            const compressedImageSrc = URL.createObjectURL(blob);
+            this.scanImgSrc = compressedImageSrc;
+          }
+        }, 'image/jpeg', 0.8); // Aquí puedes ajustar la calidad: 0.8 es un buen equilibrio entre calidad y tamaño.
       };
     }
   }
 
   resetImage() {
-    if (this.originalImage()) {
-      this.saveInSessionService.saveAttachImg(this.originalImage());
-    }
+    this.scanImgSrc = this.originalImageData.imagePath;
+    this.file = this.originalImageData.file;
+  }
+
+  async alert(message: string) {
+    const alert = await this.alertController.create({
+      header: 'Error',
+      cssClass: 'error-alert',
+      message,
+      buttons: [
+        {
+          text: 'Ok',
+        },
+      ],
+    });
+
+    await alert.present();
   }
 }

@@ -1,25 +1,41 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonBackButton, IonButtons, IonCard, IonCardContent, IonCardTitle, IonNote, IonCardHeader, IonItem, IonLabel, IonButton, IonToggle } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonBackButton, IonButtons, IonCard, IonCardContent, IonCardTitle, IonNote, IonCardHeader, IonItem, IonLabel, IonButton, IonToggle, IonIcon } from '@ionic/angular/standalone';
 import { SyncDataService } from '../../../../shared/services/sync-data.service';
 import { DatabaseService } from 'src/app/shared/services/database.service';
+import { ConnectivityService } from '../../../../shared/services/connectivity.service';
+import { addIcons } from 'ionicons';
+import { settingsOutline, wifiOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-settings',
   templateUrl: './settings.page.html',
   styleUrls: ['./settings.page.scss'],
   standalone: true,
-  imports: [IonToggle, IonBackButton, IonButtons, IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent, IonCardTitle, IonNote, IonButton, IonCardHeader, IonItem, IonLabel, CommonModule, FormsModule]
+  imports: [IonIcon, IonToggle, IonBackButton, IonButtons, IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent, IonCardTitle, IonNote, IonButton, IonCardHeader, IonItem, IonLabel, CommonModule, FormsModule]
 })
 export class SettingsPage {
+  isOnline: WritableSignal<boolean> = signal(true);
 
-  lastUpdateDate: string = new Date().toLocaleDateString();
   syncStatus: string = 'No sincronizado';
   notificationsEnabled: boolean = true;
   darkModeEnabled: boolean = false;
 
-  constructor(private dbService: DatabaseService) {}
+  constructor(private dbService: DatabaseService, private ConnectivityService: ConnectivityService) {
+    addIcons({settingsOutline,wifiOutline});
+    this.isOnline = this.ConnectivityService.getNetworkStatus();
+    this.statusSync();
+  }
+
+  async statusSync() {
+    const unsyncedRegisters = await this.dbService.getUnsyncRegisters();
+    if(unsyncedRegisters.length) {
+      this.syncStatus = 'No sincronizado';
+    } else {
+      this.syncStatus = 'Sincronizado';
+    }
+  }
 
   // Método para sincronizar la base de datos
   syncDatabase() {
