@@ -49,35 +49,36 @@
   <ion-card>
     <div class="table-container registers-table">
       <table>
-        <tr>
-          <th>Registro</th>
-          <th>Institución Educativa</th>
-        </tr>
-        @for( register of myRegisters; track register.id || register.uuid; let i
-        = $index;){
-        <tr>
-          <td>
-            <a [routerLink]="['/registers', (register.id || register.uuid)]"
-              >{{register.created || register.date_created |
-              date:'dd/MM/yyyy'}}</a
-            >
-          </td>
-          <td>{{register.sede || register.sede_name || 'sin sede'}}</td>
-        </tr>
+        <!-- Definir el ancho específico en el estilo de la tabla -->
+        <colgroup>
+          <col class="first-column-width" />
+          <col />
+        </colgroup>
+
+        <!-- Renderizado dinámico de la tabla -->
+        @for(register of myRegisters; track register.institution || register.uuid) {
+          <tr>
+            <th colspan="2" class="ion-text-center">
+              {{register.institution + ' (' + register?.institutionRadicado + ')'}}
+            </th>
+          </tr>
+          @for(record of register.records; track record.id || record.uuid) {
+            <tr>
+              <td>
+                <a [routerLink]="['/registers', (record.id || record.uuid)]">{{record.field_date || record.created | date: 'dd/MM/yyyy'}}</a>
+              </td>
+              <td>{{record.teacher || record.teacher_name || 'sin sede'}}</td>
+            </tr>
+          }
         }
+
       </table>
 
-      @if(hasMoreData){
-      <ion-infinite-scroll
-        threshold="50px"
-        (ionInfinite)="loadMoreData($event)"
-      >
-        <ion-infinite-scroll-content
-          loadingSpinner="bubbles"
-          loadingText="Cargando más datos..."
-        >
-        </ion-infinite-scroll-content>
-      </ion-infinite-scroll>
+      @if(hasMoreData) {
+        <ion-infinite-scroll threshold="50px" (ionInfinite)="loadMoreData($event)">
+          <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Cargando más datos...">
+          </ion-infinite-scroll-content>
+        </ion-infinite-scroll>
       }
     </div>
   </ion-card>

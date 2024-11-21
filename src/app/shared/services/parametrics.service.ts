@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, mergeMap, Observable, of, reduce } from 'rxjs';
+import { catchError, map, mergeMap, Observable, of, reduce } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { DatabaseService } from './database.service';
 
@@ -43,7 +43,6 @@ export class ParametricsService {
     );
   }
 
-
   async getTaxonomyItemsOffline() {
     try {
       const approaches = await this.dbService.loadApproaches();
@@ -55,48 +54,149 @@ export class ParametricsService {
     }
   }
 
-  getMunicipalitiesBytutor(idTutor: string) {
+  getMunicipalitiesBytutor(idTutor: string): Observable<any[]> {
     const URL = `${this.API_URL}/node/zones?sort=title`;
     const params = new HttpParams()
-      .set('fields[node--zones]','field_oficces_content')
-      .set('fields[taxonomy_term--municipality]','name,status')
-      .set('include','field_oficces_content.field_municipality,field_oficces_content.field_group_offices.field_municipality')
+      .set('fields[node--zones]', 'field_oficces_content')
+      .set('fields[taxonomy_term--municipality]', 'name,status')
+      .set('include', 'field_oficces_content.field_municipality,field_oficces_content.field_group_offices.field_municipality')
       .set('filter[field_tutors.id][value]', idTutor);
 
-    return this.http.get(URL, {params}).pipe(
-      map((resp: any) => {
-        const municipalities = resp?.included?.filter((item: any) => item.type === 'taxonomy_term--municipality');
-        return municipalities;
-      })
+    const fetchMunicipalityPage = (url: string, params: HttpParams): Observable<any[]> => {
+      return this.http.get(url, { params }).pipe(
+        mergeMap((resp: any) => {
+          const municipalities = resp?.included?.filter((item: any) => item.type === 'taxonomy_term--municipality') || [];
+
+          if (resp.links?.next?.href) {
+            return fetchMunicipalityPage(resp.links.next.href, params).pipe(
+              map((nextItems) => municipalities.concat(nextItems))
+            );
+          } else {
+            return of(municipalities);
+          }
+        }),
+        catchError((error) => {
+          console.error('Error al obtener los municipios:', error);
+          return of([]);
+        })
+      );
+    };
+
+    return fetchMunicipalityPage(URL, params).pipe(
+      reduce((acc: any[], items) => {
+        const uniqueItems = new Map(acc.map((item) => [item.id, item]));
+        items.forEach((item) => uniqueItems.set(item.id, item));
+        return Array.from(uniqueItems.values());
+      }, [])
     );
   }
 
-  getSedesBytutor(idTutor: string) {
+  getSedesBytutor(idTutor: string): Observable<any[]> {
     const URL = `${this.API_URL}/node/zones?sort=title`;
     const params = new HttpParams()
-      .set('fields[node--zones]','field_oficces_content')
-      .set('include','field_oficces_content.field_group_offices')
+      .set('fields[node--zones]', 'field_oficces_content')
+      .set('include', 'field_oficces_content.field_group_offices,field_oficces_content.field_group_offices.field_teachers')
       .set('filter[field_tutors.id][value]', idTutor);
 
-    return this.http.get(URL, {params}).pipe(
-      map((resp: any) => {
-        const offices = resp?.included?.filter((item: any) => item.type === 'node--offices');
-        return offices.map((office: any) => {
-          return {
-            id: office.id,
-            title: office.attributes.title,
-            code_dane: office.attributes.field_code_dane,
-            address: office.attributes.field_address,
-            created: office.attributes.created,
-            department: office.relationships.field_department.data.id ? office.relationships.field_department.data.id : null,
-            location: office.relationships.field_location.data.id ? office.relationships.field_location.data.id : null,
-            municipality: office.relationships.field_municipality.data.id ? office.relationships.field_municipality.data.id : null,
-            state: office.relationships.field_state.data ? office.relationships.field_state.data.id : null,
-            status: office.attributes.status,
-          };
-        });
-      })
+    const fetchSedesPage = (url: string, params: HttpParams): Observable<any[]> => {
+      return this.http.get(url, { params }).pipe(
+        mergeMap((resp: any) => {
+          const offices = resp?.included?.filter((item: any) => item.type === 'node--offices') || [];
+
+          const mappedOffices = offices.map((office: any) => {
+            const teacherIds = office.relationships.field_teachers?.data?.map((teacher: any) => teacher.id) || [];
+            return {
+              id: office.id,
+              title: office.attributes.title,
+              code_dane: office.attributes.field_code_dane,
+              based: office.attributes.field_based,
+              address: office.attributes.field_address,
+              created: office.attributes.created,
+              department: office.relationships.field_department?.data?.id || null,
+              location: office.relationships.field_location?.data?.id || null,
+              municipality: office.relationships.field_municipality?.data?.id || null,
+              state: office.relationships.field_state?.data?.id || null,
+              status: office.attributes.status,
+              teachers: teacherIds,
+            };
+          });
+
+          if (resp.links?.next?.href) {
+            return fetchSedesPage(resp.links.next.href, params).pipe(
+              map((nextItems) => mappedOffices.concat(nextItems))
+            );
+          } else {
+            return of(mappedOffices);
+          }
+        }),
+        catchError((error) => {
+          console.error('Error al obtener las sedes:', error);
+          return of([]);
+        })
+      );
+    };
+
+    return fetchSedesPage(URL, params).pipe(
+      reduce((acc: any[], items) => {
+        const uniqueItems = new Map(acc.map((item) => [item.id, item]));
+        items.forEach((item) => uniqueItems.set(item.id, item));
+        return Array.from(uniqueItems.values());
+      }, [])
     );
   }
+
+  getTeachersByTutor(idTutor: string): Observable<any[]> {
+    const URL = `${this.API_URL}/node/zones?sort=title`;
+    const params = new HttpParams()
+      .set('fields[node--zones]', 'field_oficces_content')
+      .set('include', 'field_oficces_content.field_group_offices.field_teachers,field_oficces_content.field_group_offices.field_teachers.field_type_document')
+      .set('filter[field_tutors.id][value]', idTutor);
+
+    const fetchTeachersPage = (url: string, params: HttpParams): Observable<any[]> => {
+      return this.http.get(url, { params }).pipe(
+        mergeMap((resp: any) => {
+          const teachers = resp?.included?.filter((item: any) => item.type === 'node--teacher') || [];
+
+          const mappedTeachers = teachers.map((teacher: any) => {
+            const documentTypeId = teacher.relationships.field_type_document?.data?.id || null;
+            const documentType = documentTypeId ? resp.included.find((item: any) => item.id === documentTypeId) : null;
+
+            return {
+              id: teacher.id,
+              name: teacher.attributes.title,
+              created: teacher.attributes.created,
+              documentType: documentType?.attributes?.name || null,
+              documentNumber: teacher.attributes.field_document_number,
+              mail: teacher.attributes.field_email,
+              phone: teacher.attributes.field_phone_number,
+              state: teacher.relationships.field_state?.data?.id || null,
+              status: teacher.attributes.status,
+            };
+          });
+
+          if (resp.links?.next?.href) {
+            return fetchTeachersPage(resp.links.next.href, params).pipe(
+              map((nextItems) => mappedTeachers.concat(nextItems))
+            );
+          } else {
+            return of(mappedTeachers);
+          }
+        }),
+        catchError((error) => {
+          console.error('Error al obtener los docentes:', error);
+          return of([]);
+        })
+      );
+    };
+
+    return fetchTeachersPage(URL, params).pipe(
+      reduce((acc: any[], items) => {
+        const uniqueItems = new Map(acc.map((item) => [item.id, item]));
+        items.forEach((item) => uniqueItems.set(item.id, item));
+        return Array.from(uniqueItems.values());
+      }, [])
+    );
+  }
+
 }
 

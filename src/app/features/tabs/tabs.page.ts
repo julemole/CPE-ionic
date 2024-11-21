@@ -13,10 +13,10 @@ import {
   IonIcon,
   IonLabel,
   LoadingController,
-  Platform,
-} from '@ionic/angular/standalone';
+  AlertController,
+  Platform} from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { camera, documentAttach, save, createOutline } from 'ionicons/icons';
+import { createOutline, cameraOutline, clipboardOutline, saveOutline } from 'ionicons/icons';
 import { SaveInSessionService } from '../../shared/services/save-in-session.service';
 import {
   attachedData,
@@ -27,6 +27,7 @@ import { LocalStorageService } from 'src/app/core/services/local-storage.service
 import {
   base64ToBlob,
   blobToFile,
+  formatDateToRFC3339,
   saveFileInDevice,
 } from 'src/app/shared/utils/functions';
 import { ConnectivityService } from 'src/app/shared/services/connectivity.service';
@@ -61,6 +62,7 @@ export class TabsPage {
   attachedData: WritableSignal<attachedData[]> = signal<attachedData[]>([]);
   signature: WritableSignal<string> = signal<string>('');
   registerPayload: WritableSignal<any> = signal<any>({});
+  origIdInstitution: WritableSignal<string> = signal<string>('');
 
   loading!: HTMLIonLoadingElement;
 
@@ -72,14 +74,16 @@ export class TabsPage {
     private router: Router,
     private localSS: LocalStorageService,
     private loadingController: LoadingController,
-    private platform: Platform
+    private platform: Platform,
+    private alertController: AlertController,
   ) {
-    addIcons({ camera, documentAttach, createOutline, save });
+    addIcons({cameraOutline,clipboardOutline,createOutline,saveOutline});
     this.isOnline = this.connectivityService.getNetworkStatus();
     this.photoData = this.saveInSessionService.getPhotoData();
     this.attachedData = this.saveInSessionService.getAttachedData();
     this.signature = this.saveInSessionService.getSignature();
     this.registerPayload = this.saveInSessionService.getRegisterPayload();
+    this.origIdInstitution = this.saveInSessionService.getOrigIdInstitution();
     this.institutionId = this.aRoute.snapshot.params['idInstitution'];
   }
 
@@ -103,16 +107,18 @@ export class TabsPage {
     this.showLoading();
 
     if (this.isOnline()) {
-      try{
+      try {
         await this.uploadAllFiles(evidences, annexes, signature, csrf_token);
         await this.createAllEvidences(evidences, csrf_token);
         await this.createAllAnnex(annexes, csrf_token);
 
+        const field_date = formatDateToRFC3339(new Date());
         const payload: any = {
           data: {
             type: 'node--registry',
             attributes: {
               title: 'Registro',
+              field_date
             },
             relationships: {
               field_activities: {
@@ -133,10 +139,16 @@ export class TabsPage {
                   id: this.registerPayload().subactivity,
                 },
               },
-              field_sede: {
+              field_teacher: {
+                data: {
+                  type: 'node--teacher',
+                  id: this.institutionId,
+                },
+              },
+              field_institution: {
                 data: {
                   type: 'node--offices',
-                  id: this.institutionId,
+                  id: this.origIdInstitution(),
                 },
               },
               field_signature: {
@@ -184,7 +196,8 @@ export class TabsPage {
                 approach_uuid: this.registerPayload().approach,
                 activity_uuid: this.registerPayload().activity,
                 subactivity_uuid: this.registerPayload().subactivity,
-                sede_uuid: this.institutionId,
+                teacher_uuid: this.institutionId,
+                sede_uuid: this.origIdInstitution(),
                 user_uuid: user_id,
                 is_synced: 1,
                 status: 1,
@@ -195,14 +208,14 @@ export class TabsPage {
             this.hideLoading();
             this.router.navigate(['/home']);
           },
-          error: (error) => {
-            console.error('Error al crear el registroooooooooooooooooooooooo:', JSON.stringify(error));
+          error: async (error: any) => {
             this.hideLoading();
+            await this.errorAlert(`Error al crear el registro: ${error.message || error.error?.message || error}`);
           },
         });
-      } catch (error) {
-        alert('Error al crear el registro' + JSON.stringify(error) + 'el otro' + this.error + 'y otro' + error);
+      } catch (error: any) {
         this.hideLoading();
+        await this.errorAlert(`Error al crear el registro: ${error.message || error.error?.message || error}`);
       }
     } else {
       try {
@@ -217,7 +230,8 @@ export class TabsPage {
           approach_uuid: this.registerPayload().approach,
           activity_uuid: this.registerPayload().activity,
           subactivity_uuid: this.registerPayload().subactivity,
-          sede_uuid: this.institutionId,
+          teacher_uuid: this.institutionId,
+          sede_uuid: this.origIdInstitution(),
           user_uuid: user_id,
           is_synced: 0,
           status: 1,
@@ -226,9 +240,9 @@ export class TabsPage {
         this.saveInSessionService.cleanAllData();
         this.hideLoading();
         this.router.navigate(['/home']);
-      } catch (error) {
-        console.error('Error al crear el registro:', error);
+      } catch (error: any) {
         this.hideLoading();
+        await this.errorAlert(`Error al crear el registro offline: ${error.message || error.error?.message || error}`);
       }
     }
   }
@@ -249,6 +263,18 @@ export class TabsPage {
           evidence
         )
     );
+
+    const originalEvidencePromises = evidences.map(
+      (evidence) =>
+        evidence.originalFile &&
+        this.registersService.uploadFileAndSaveId(
+          evidence.originalFile,
+          csrf,
+          'original_evidence',
+          evidence
+        )
+    )
+
     const annexPromises = annexes.map(
       (annex) =>
         annex.file &&
@@ -267,42 +293,51 @@ export class TabsPage {
     );
 
     try {
+      // Intentamos cargar todos los archivos
       const results = await Promise.all([
         ...evidencePromises,
+        ...originalEvidencePromises,
         ...annexPromises,
         signaturePromise,
       ]);
-      console.log('Todos los archivos han sido subidos:', results);
-    } catch (error) {
-      this.error = JSON.stringify(error);
-      alert('Error al subir los archivos' + JSON.stringify(error));
-      console.error('Error al subir los archivos:', error);
+      return results; // Devuelve los resultados en caso de éxito
+    } catch (error: any) {
+      throw new Error(`Error al subir archivos: ${error.message || error.error?.message || error}`);
     }
   }
 
   async createAllEvidences(photoDataArray: PhotoData[], csrfToken: string) {
     const promises = photoDataArray.map((photoData) =>
       this.registersService.createEvidence(photoData, csrfToken)
+        .catch(error => {
+          console.error(`Error al crear evidencia ${photoData.name}:`, error.message);
+          throw new Error(`Error al crear evidencia ${photoData.name}: ${error.message}`);
+        })
     );
 
     try {
-      const results = await Promise.all(promises);
-      console.log('Todas las evidencias han sido creadas:', results);
-    } catch (error) {
-      console.error('Error al crear las evidencias:', error);
+      const results = await Promise.all(promises); // Si una promesa falla, todas fallarán
+      return results;
+    } catch (error: any) {
+      throw new Error(`Error al crear las evidencias: ${error.message || error}`);
     }
   }
 
   async createAllAnnex(annexDataArray: attachedData[], csrfToken: string) {
     const promises = annexDataArray.map((annexData) =>
       this.registersService.createAnnex(annexData, csrfToken)
+        .catch(error => {
+          console.error(`Error al crear anexo ${annexData.name}:`, error.message);
+          throw new Error(`Error al crear anexo ${annexData.name}: ${error.message}`);
+        })
     );
 
     try {
       const results = await Promise.all(promises);
-      console.log('Todos los anexos han sido creadas:', results);
-    } catch (error) {
-      console.error('Error al crear los anexos:', error);
+      console.log('Todos los anexos han sido creados:', results);
+      return results;
+    } catch (error: any) {
+      throw new Error(`Error al crear todos los anexos: ${error.message || error}`);
     }
   }
 
@@ -324,17 +359,22 @@ export class TabsPage {
         is_synced: 0,
         status: 1,
       };
-      const result = await this.registersService.createEvidenceOffline(
-        evidence
-      );
-      photoData.idEvidence = result.uuid;
+      return this.registersService.createEvidenceOffline(evidence)
+        .then((result) => {
+          photoData.idEvidence = result.uuid;
+          return result;
+        })
+        .catch(error => {
+          console.error(`Error al crear evidencia offline ${photoData.name}:`, error.message);
+          throw new Error(`Error al crear evidencia offline ${photoData.name}: ${error.message}`);
+        });
     });
 
     try {
       const results = await Promise.all(promises);
-      console.log('Todas las evidencias han sido creadas:', results);
-    } catch (error) {
-      console.error('Error al crear las evidencias:', error);
+      return results;
+    } catch (error: any) {
+      throw new Error(`Error al crear todas las evidencias offline: ${error.message || error}`);
     }
   }
 
@@ -353,15 +393,22 @@ export class TabsPage {
         is_synced: 0,
         status: 1,
       };
-      const result = await this.registersService.createAnnexOffline(annex);
-      annexData.idAnnex = result.uuid;
+      return this.registersService.createAnnexOffline(annex)
+        .then((result) => {
+          annexData.idAnnex = result.uuid;
+          return result;
+        })
+        .catch(error => {
+          console.error(`Error al crear anexo offline ${annexData.name}:`, error.message);
+          throw new Error(`Error al crear anexo offline ${annexData.name}: ${error.message}`);
+        });
     });
 
     try {
       const results = await Promise.all(promises);
-      console.log('Todos los anexos han sido creadas:', results);
-    } catch (error) {
-      console.error('Error al crear los anexos:', error);
+      return results;
+    } catch (error: any) {
+      throw new Error(`Error al crear todos los anexos offline: ${error.message || error}`);
     }
   }
 
@@ -370,19 +417,20 @@ export class TabsPage {
     registerId: string,
     is_synced: number
   ) {
-    const promises = photoDataArray.map(
-      async (photoData) =>
-        await this.registersService.addEvidenceToRegister(
-          registerId,
-          photoData.idEvidence,
-          is_synced
-        )
+    const promises = photoDataArray.map((photoData) =>
+      this.registersService.addEvidenceToRegister(registerId, photoData.idEvidence, is_synced)
+        .catch(error => {
+          console.error(`Error al agregar evidencia ${photoData.idEvidence} al registro ${registerId}:`, error.message);
+          throw new Error(`Error al agregar evidencia ${photoData.idEvidence} al registro: ${error.message}`);
+        })
     );
+
     try {
       const results = await Promise.all(promises);
-      console.log('Todas las evidencias han sido creadas:', results);
-    } catch (error) {
-      console.error('Error al crear las evidencias:', error);
+      console.log('Todas las evidencias han sido agregadas al registro:', results);
+      return results;
+    } catch (error: any) {
+      throw new Error(`Error al agregar todas las evidencias al registro: ${error.message || error}`);
     }
   }
 
@@ -391,19 +439,19 @@ export class TabsPage {
     registerId: string,
     is_synced: number
   ) {
-    const promises = annexDataArray.map(
-      async (annexData) =>
-        await this.registersService.addAnnexToRegister(
-          registerId,
-          annexData.idAnnex,
-          is_synced
-        )
+    const promises = annexDataArray.map((annexData) =>
+      this.registersService.addAnnexToRegister(registerId, annexData.idAnnex, is_synced)
+        .catch(error => {
+          console.error(`Error al agregar anexo ${annexData.idAnnex} al registro ${registerId}:`, error.message);
+          throw new Error(`Error al agregar anexo ${annexData.idAnnex} al registro: ${error.message}`);
+        })
     );
+
     try {
       const results = await Promise.all(promises);
-      console.log('Todos los anexos han sido creadas:', results);
-    } catch (error) {
-      console.error('Error al crear los anexos:', error);
+      return results;
+    } catch (error: any) {
+      throw new Error(`Error al agregar todos los anexos al registro: ${error.message || error}`);
     }
   }
 
@@ -414,24 +462,13 @@ export class TabsPage {
     synced_relations: number
   ) {
     try {
-      const register = await this.registersService.createRegisterOffline(
-        registerBody
-      );
+      const register = await this.registersService.createRegisterOffline(registerBody);
       if (register) {
-        await this.createAllEvidenceToRegister(
-          evidenceData,
-          register.uuid,
-          synced_relations
-        );
-        await this.createAllAnnexToRegister(
-          annexData,
-          register.uuid,
-          synced_relations
-        );
+        await this.createAllEvidenceToRegister(evidenceData, register.uuid, synced_relations);
+        await this.createAllAnnexToRegister(annexData, register.uuid, synced_relations);
       }
-    } catch (error) {
-      console.error('Error al crear el registro:', error);
-      throw error;
+    } catch (error: any) {
+      throw new Error(`Error al crear el registro offline o al agregar evidencias/anexos: ${error.message || error}`);
     }
   }
 
@@ -446,5 +483,20 @@ export class TabsPage {
 
   async hideLoading() {
     await this.loading.dismiss();
+  }
+
+  async errorAlert(message: string) {
+    const alert = await this.alertController.create({
+      header: 'Error',
+      cssClass: 'error-alert',
+      message,
+      buttons: [
+        {
+          text: 'Ok',
+        },
+      ],
+    });
+
+    await alert.present();
   }
 }

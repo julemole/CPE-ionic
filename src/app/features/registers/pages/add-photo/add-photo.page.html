@@ -41,7 +41,7 @@
                 type="file"
                 class="file-input"
                 (change)="onFileSelected($event)"
-                accept=".jpg, .jpeg, .png, .svg"
+                accept=".pdf, .jpg, .jpeg, .png, .gif, .webp, .heic"
               />
             </div>
             <ion-button
@@ -55,9 +55,9 @@
           </div>
         }
       </div>
-      @if(imageSrc && photoId && evidenceLocalPath) {
+      @if(imageSrc && photoId) {
         <div class="ion-text-center">
-          <ion-button (click)="openFile()">
+          <ion-button (click)="downloadWithBrowser()">
             <ion-icon slot="start" name="download"></ion-icon>
             Descargar
           </ion-button>
@@ -102,6 +102,7 @@
           </div>
           }
         </div>
+        <br>
         @if(!photoId){
           <div class="btn-container">
             <ion-button

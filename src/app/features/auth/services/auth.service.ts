@@ -87,4 +87,22 @@ export class AuthService {
     return btoa(token);
   }
 
+  decodeBase64(base64: string): string {
+    return atob(base64);
+  }
+
+  encodeToBase64(value: string): string {
+    return btoa(value);
+  }
+
+  getPasswordFromToken(token: string): string {
+    const decodedToken = this.decodeBase64(token);
+    const parts = decodedToken.split(':');
+    if (parts.length === 2) {
+      return this.encodeToBase64(parts[1]);
+    } else {
+      throw new Error('Token inválido');
+    }
+  }
+
 }

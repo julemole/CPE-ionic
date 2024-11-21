@@ -17,24 +17,22 @@ import {
 import {
   IonContent,
   IonProgressBar,
+  IonCardTitle,
   IonHeader,
   IonTitle,
   IonToolbar,
   IonButton,
   IonButtons,
-  IonTabs,
-  IonTabBar,
-  IonTabButton,
   IonBackButton,
-  IonSelect,
   IonIcon,
   IonLabel,
   IonList,
   IonItem,
+  IonSelect,
   IonSelectOption,
   AlertController
 } from '@ionic/angular/standalone';
-import { ActivatedRoute, RouterLinkWithHref } from '@angular/router';
+import { ActivatedRoute, Router, RouterLinkWithHref } from '@angular/router';
 import { addIcons } from 'ionicons';
 import {
   camera,
@@ -65,15 +63,13 @@ import { loadSignatureFile } from 'src/app/shared/utils/functions';
   standalone: true,
   imports: [
     IonItem,
+    IonCardTitle,
     IonList,
     IonProgressBar,
+    IonSelect,
     IonSelectOption,
     IonContent,
     IonHeader,
-    IonSelect,
-    IonTabs,
-    IonTabBar,
-    IonTabButton,
     IonIcon,
     IonLabel,
     IonTitle,
@@ -92,6 +88,7 @@ export class MainRegisterPage implements OnInit {
   isLoading: boolean = false;
 
   idInstitution: string = '';
+  origIdInstitution: string = '';
   idRegister: string = '';
 
   registerContent: any;
@@ -108,13 +105,16 @@ export class MainRegisterPage implements OnInit {
   approachList: any[] = [];
   activitiesList: any[] = [];
   subactivitiesList: any[] = [];
-  institution: any;
+  teacher: any;
+  institutionName: string = '';
+  institutionBased: string = '';
 
   photoData: WritableSignal<PhotoData[]> = signal<PhotoData[]>([]);
   attachedData: WritableSignal<attachedData[]> = signal<attachedData[]>([]);
 
   constructor(
     private aRoute: ActivatedRoute,
+    private router: Router,
     private parametricsService: ParametricsService,
     private saveInSessionService: SaveInSessionService,
     private registersService: RegistersService,
@@ -159,6 +159,13 @@ export class MainRegisterPage implements OnInit {
   }
 
   async ngOnInit() {
+    const navigation = this.router.getCurrentNavigation();
+    if (navigation && navigation.extras.state) {
+      this.institutionName = navigation.extras.state['institution'] as string;
+      this.institutionBased = navigation.extras.state['institutionBased'] as string;
+      const id = navigation.extras.state['id'] as string;
+      this.saveInSessionService.saveOrigIdInstitution(id);
+    }
     this.idInstitution = this.aRoute.snapshot.params['idInstitution'];
     this.idRegister = this.aRoute.snapshot.params['idRegister'];
     if (this.idInstitution || this.idRegister) {
@@ -179,7 +186,7 @@ export class MainRegisterPage implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        console.error(error);
+        console.error('error trayendo el registro', error);
       },
     });
   }
@@ -208,7 +215,7 @@ export class MainRegisterPage implements OnInit {
       this.parametricsService.getTaxonomyItems('sub_activities');
     let institution = null;
     if (this.idInstitution) {
-      institution = this.registersService.getInstitutionById(
+      institution = this.registersService.getTeacherByid(
         this.idInstitution
       );
     } else {
@@ -226,7 +233,7 @@ export class MainRegisterPage implements OnInit {
         this.activitiesList = activities;
         this.subactivitiesList = subactivities;
         if (institution) {
-          this.institution = institution;
+          this.teacher = institution;
           this.isLoading = false;
         }
         if (this.idRegister) {
@@ -267,7 +274,7 @@ export class MainRegisterPage implements OnInit {
         }
       }
       if(this.idInstitution){
-        this.institution = await this.dbService.getSedeById(this.idInstitution)
+        this.teacher = await this.dbService.getTeacherById(this.idInstitution)
       }
     } catch (error) {
       console.error('Erroooooor', error);

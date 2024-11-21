@@ -11,6 +11,7 @@ export class SaveInSessionService {
   private attachedData: WritableSignal<attachedData[]> = signal<attachedData[]>([]);
   private signature: WritableSignal<string> = signal<string>('');
   private registerPayload: WritableSignal<any> = signal<any>({});
+  private origIdInstitution: WritableSignal<string> = signal<string>('');
 
   constructor(private router: Router) { }
 
@@ -74,5 +75,13 @@ export class SaveInSessionService {
 
   getRegisterPayload() {
     return this.registerPayload;
+  }
+
+  saveOrigIdInstitution(data: string) {
+    this.origIdInstitution.set(data);
+  }
+
+  getOrigIdInstitution() {
+    return this.origIdInstitution;
   }
 }

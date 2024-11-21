@@ -14,13 +14,12 @@ const config: CapacitorConfig = {
       showSpinner: false,
       androidSpinnerStyle: "large",
       iosSpinnerStyle: "small",
-      spinnerColor: "#999999",
       splashFullScreen: false,
       splashImmersive: false,
       layoutName: "launch_screen",
       useDialog: false,
     },
-  },
+  }
 };
 
 export default config;

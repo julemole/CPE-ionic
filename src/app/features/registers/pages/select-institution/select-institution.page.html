@@ -18,12 +18,12 @@
 <ion-content [fullscreen]="true">
   <ion-header>
     <ion-toolbar class="second-toolbar">
-      <ion-title class="title">Seleccionar institución educativa</ion-title>
+      <ion-title class="title">Seleccionar docente</ion-title>
     </ion-toolbar>
   </ion-header>
   @if(tutorInfo?.id || tutorInfo?.uuid) {
   <ion-card-title class="ion-padding-horizontal ion-padding-top"
-    >{{tutorInfo?.field_department || tutorInfo?.department}}</ion-card-title
+    >{{tutorInfo?.field_department || tutorInfo?.department_name}}</ion-card-title
   >
   <ion-accordion-group class="ion-margin" [value]="accordionValues">
     @for (zone of zonesList; track zone.id || zone.uuid){
@@ -33,35 +33,31 @@
           <strong>{{(zone.title || zone.name) + ' / ' + (zone.field_department || zone.department || '')}}</strong>
         </ion-label>
       </ion-item>
-      <ion-list slot="content">
-        @for(sede of zone.sedes; track sede.id || sede.uuid){
-          <ion-item lines="none" class="container-item">
-            <ion-label [routerLink]="[sede.id || sede.uuid]" class="label"
-              >{{sede.attributes?.title || sede.name}}</ion-label
-            >
-          </ion-item>
 
-          <!-- <ion-accordion-group>
-            @for(subItem of sede.subItems; track subItem.id || subItem.uuid) {
-              <ion-accordion [value]="subItem.id || subItem.uuid">
-                <ion-item slot="header">
-                  <ion-label>
-                    <strong>{{subItem.title || subItem.name}}</strong>
-                  </ion-label>
-                </ion-item>
-                <ion-list slot="content">
-                  @for(detail of subItem.details; track detail.id || detail.uuid) {
-                    <ion-item lines="none">
-                      <ion-label>
-                        {{detail.name}}
+      <ion-list slot="content">
+        <ion-accordion-group>
+          @for(sede of zone.sedes; track sede.id || sede.uuid){
+            <ion-accordion>
+              <ion-item slot="header" lines="none" class="container-item">
+                <ion-label class="label">
+                <!-- <ion-label [routerLink]="[sede.id || sede.uuid]" class="label"> -->
+                  {{sede.attributes?.title || sede.name}}
+                </ion-label>
+              </ion-item>
+
+              <ion-list slot="content">
+                @for(teacher of sede.teachers; track teacher.id || teacher.uuid) {
+                    <ion-item lines="none" class="teacher-item">
+                      <ion-label (click)="navigateWithState((teacher.id || teacher.uuid), (sede?.attributes?.title || sede.name), (sede?.attributes?.field_based || sede.based), (sede.id || sede.uuid))">
+                        {{teacher.attributes?.title || teacher.name}}
                       </ion-label>
                     </ion-item>
-                  }
-                </ion-list>
-              </ion-accordion>
-            }
-          </ion-accordion-group> -->
-        }
+                }
+              </ion-list>
+            </ion-accordion>
+
+          }
+        </ion-accordion-group>
       </ion-list>
     </ion-accordion>
     }

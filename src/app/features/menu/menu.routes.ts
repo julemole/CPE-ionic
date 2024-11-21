@@ -12,6 +12,10 @@ export const menuRoutes: Routes = [
     loadComponent: () => import('./pages/profile/profile.page').then((m) => m.ProfilePage),
   },
   {
+    path: 'change-pass',
+    loadComponent: () => import('./pages/change-pass/change-pass.page').then((m) => m.ChangePassPage),
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./pages/settings/settings.page').then((m) => m.SettingsPage),
   },

@@ -4,11 +4,11 @@
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
     <ion-title>
-      Ajustes
+      Sincronizar
     </ion-title>
     <ion-buttons slot="start">
       <ion-button>
-        <ion-icon name="settings-outline"></ion-icon>
+        <ion-icon name="sync-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -44,9 +44,9 @@
       </ion-item>
 
       <!-- Botón para sincronizar la base de datos -->
-      <!-- <ion-button expand="block" color="secondary" (click)="syncDatabase()">
-        Sincronizar usuario
-      </ion-button> -->
+      <ion-button expand="block" color="secondary" (click)="syncDatabase()">
+        Restaurar usuario
+      </ion-button>
 
       <!-- Botón para descargar la base de datos -->
       <!-- <ion-button expand="block" color="medium" (click)="downloadDatabase()">

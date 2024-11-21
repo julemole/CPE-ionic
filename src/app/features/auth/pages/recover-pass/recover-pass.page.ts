@@ -1,10 +1,7 @@
-import { Component, OnInit, signal, WritableSignal } from '@angular/core';
+import { Component, signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   IonContent,
-  IonHeader,
-  IonTitle,
-  IonToolbar,
   IonIcon,
   IonButton,
   IonInput,
@@ -32,9 +29,6 @@ import { LoadingController } from '@ionic/angular/standalone';
     IonButton,
     BannerGovComponent,
     IonContent,
-    IonHeader,
-    IonTitle,
-    IonToolbar,
     IonIcon,
     IonInput,
     IonButton,

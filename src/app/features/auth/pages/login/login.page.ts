@@ -6,24 +6,18 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router, RouterLink, RouterLinkWithHref } from '@angular/router';
+import { Router, RouterLinkWithHref } from '@angular/router';
 import { addIcons } from 'ionicons';
 import {
   eyeOutline,
   eyeOffOutline,
   personCircleOutline,
-  lockClosedOutline,
-} from 'ionicons/icons';
+  lockClosedOutline, personOutline } from 'ionicons/icons';
 import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonInput,
-  IonInputPasswordToggle,
   IonIcon,
   IonButton,
-  IonItem,
   AlertController,
   LoadingController,
   Platform,
@@ -44,14 +38,9 @@ import { ConnectivityService } from '../../../../shared/services/connectivity.se
     ReactiveFormsModule,
     RouterLinkWithHref,
     BannerGovComponent,
-    IonItem,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
     IonContent,
     IonInput,
     IonButton,
-    IonInputPasswordToggle,
     IonIcon,
   ],
   styleUrls: ['./login.page.scss'],
@@ -78,12 +67,7 @@ export class LoginPage {
     private syncDataService: SyncDataService,
     private platform: Platform
   ) {
-    addIcons({
-      personCircleOutline,
-      eyeOffOutline,
-      eyeOutline,
-      lockClosedOutline,
-    });
+    addIcons({personOutline,eyeOffOutline,eyeOutline,lockClosedOutline,personCircleOutline,});
     this.isOnline = this.connectivityService.getNetworkStatus();
     this.loginForm = this.fb.group({
       email: ['', [Validators.required]],
@@ -118,7 +102,7 @@ export class LoginPage {
           if (token) this.localStorageService.setItem('TOKEN', token);
           this.localStorageService.setItem('LOGOUT_TOKEN', data.logout_token);
           this.localStorageService.setItem('CSRF_TOKEN', data.csrf_token);
-          this.getUserId(token);
+          this.getUserId(token, password);
         },
         error: (error) => {
           this.hideLoading();
@@ -140,12 +124,12 @@ export class LoginPage {
     }
   }
 
-  getUserId(token: string): void {
+  getUserId(token: string, pass: string): void {
     this.authService.getUserId(token).subscribe({
       next: (id) => {
         this.localStorageService.setItem('USER_ID', id);
         if (this.platform.is('hybrid')) {
-          this.synchronizeData(id, this.password.value);
+          this.synchronizeData(id, pass);
         } else {
           this.hideLoading();
           this.router.navigate(['/home']);
@@ -160,60 +144,65 @@ export class LoginPage {
   }
 
   async synchronizeData(idUser: string, pass: string) {
-    if (await this.dbService.isDbReady()) {
-      const syncLogs = await this.dbService.loadSyncLogs();
-      const user = await this.dbService.getUserById(idUser);
-      const passBasic = btoa(pass);
-      if (!user?.password) {
-        await this.hideLoading();
-        this.message = 'Descargando información requerida...';
-        await this.showLoading();
-        if (syncLogs.length) {
+    try {
+      if (await this.dbService.isDbReady()) {
+        const syncLogs = await this.dbService.loadSyncLogs();
+        const user = await this.dbService.getUserById(idUser);
+        const passBasic = btoa(pass);
+
+        if (!user?.password) {
+          await this.hideLoading();
+          this.message = 'Descargando información requerida...';
+          await this.showLoading();
+
           try {
-            await this.syncDataService.newUserData(idUser, passBasic);
+            if (syncLogs.length) {
+              await this.syncDataService.newUserData(idUser, passBasic);
+            } else {
+              await this.syncDataService.syncAllData(idUser, passBasic);
+            }
             this.hideLoading();
             this.router.navigate(['/home']);
-          } catch (error) {
+          } catch (error: any) {
+            // Limpiar almacenamiento local y mostrar el mensaje específico del error HTTP
+            this.localStorageService.clearStorage();
             this.hideLoading();
-            this.alert('Error descargando la información, vuelve a intentar');
+            this.alert(`Error descargando la información: ${error.message || error?.error?.message || 'Error en servicio HTTP'}`);
+            this.dbService.resetDatabase();
           }
         } else {
-          try {
-            await this.syncDataService.syncAllData(idUser, passBasic);
+          if (user.password === passBasic) {
             this.hideLoading();
             this.router.navigate(['/home']);
-          } catch (error) {
-            this.hideLoading();
-            this.alert('Error descargando la información, vuelve a intentar');
+          } else {
+            try {
+              await this.dbService.updateUserPasswordById(idUser, passBasic);
+              this.hideLoading();
+              this.router.navigate(['/home']);
+            } catch (error: any) {
+              // Limpiar almacenamiento local y mostrar el mensaje específico del error en la base de datos
+              this.localStorageService.clearStorage();
+              this.hideLoading();
+              this.alert(`Error actualizando la contraseña en la base de datos: ${error.message}`);
+            }
           }
         }
       } else {
-        if (user.password === passBasic) {
-          this.hideLoading();
-          this.router.navigate(['/home']);
-        } else {
-          try {
-            await this.dbService.updateUserById(idUser, {
-              password: passBasic,
-            });
-            this.hideLoading();
-            this.router.navigate(['/home']);
-          } catch (error) {
-            this.hideLoading();
-            this.alert(
-              'Error actualizando la contraseña en la base de datos local'
-            );
-          }
-        }
+        // Limpiar almacenamiento local y mostrar mensaje de error en la creación de la base de datos
+        this.localStorageService.clearStorage();
+        this.hideLoading();
+        this.alert('Error en la creación de la base de datos, intente nuevamente');
       }
-    } else {
+    } catch (dbError: any) {
+      // Limpiar almacenamiento local y mostrar mensaje específico del error en la base de datos
       this.localStorageService.clearStorage();
       this.hideLoading();
-      this.alert(
-        'Error en la creación de la base de datos, intente nuevamente'
-      );
+      this.alert(`Error al acceder a la base de datos local: ${dbError.message || 'Error en la base de datos'}`);
+      await this.dbService.resetDatabase();
     }
   }
+
+
 
   showPassword() {
     this.showPass = !this.showPass;

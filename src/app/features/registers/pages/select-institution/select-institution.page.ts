@@ -1,6 +1,5 @@
 import { Component, OnInit, signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import {
   IonContent,
   IonProgressBar,
@@ -10,9 +9,6 @@ import {
   IonButtons,
   IonBackButton,
   IonItem,
-  IonCardHeader,
-  IonCard,
-  IonCardContent,
   IonCardTitle,
   IonAccordion,
   IonAccordionGroup,
@@ -21,7 +17,7 @@ import {
   IonButton,
   IonIcon,
 } from '@ionic/angular/standalone';
-import { RouterLinkWithHref } from '@angular/router';
+import { Router } from '@angular/router';
 import { addIcons } from 'ionicons';
 import { documentTextOutline } from 'ionicons/icons';
 import { UserService } from '../../../menu/services/user.service';
@@ -39,12 +35,9 @@ import { SaveInSessionService } from '../../../../shared/services/save-in-sessio
     IonList,
     IonProgressBar,
     IonLabel,
-    IonCard,
     IonButton,
     IonIcon,
-    IonCardContent,
     IonCardTitle,
-    IonCardHeader,
     IonAccordion,
     IonAccordionGroup,
     IonItem,
@@ -55,8 +48,6 @@ import { SaveInSessionService } from '../../../../shared/services/save-in-sessio
     IonTitle,
     IonToolbar,
     CommonModule,
-    FormsModule,
-    RouterLinkWithHref,
   ],
 })
 export class SelectInstitutionPage implements OnInit {
@@ -71,7 +62,8 @@ export class SelectInstitutionPage implements OnInit {
     private userService: UserService,
     private localStorageSv: LocalStorageService,
     private connectivityService: ConnectivityService,
-    private saveInSessionService: SaveInSessionService
+    private saveInSessionService: SaveInSessionService,
+    private router: Router,
   ) {
     addIcons({ documentTextOutline });
     this.isOnline = connectivityService.getNetworkStatus();
@@ -90,6 +82,15 @@ export class SelectInstitutionPage implements OnInit {
     }
   }
 
+  navigateWithState(teacherId: any, institution: string, institutionBased: string, id: string) {
+    const currentUrl = this.router.url;
+    if (teacherId && institution) {
+      this.router.navigate([`${currentUrl}/${teacherId}`], { state: { institution, institutionBased, id } });
+    } else {
+      console.error('Teacher ID or institution is undefined');
+    }
+  }
+
   getCompleteData(user_id: string): void {
     const userInfo = this.userService.getUserInfo(user_id);
     const zonesWithSedes = this.userService.getZonesWithSedesByTutor(user_id);
@@ -97,7 +98,6 @@ export class SelectInstitutionPage implements OnInit {
     forkJoin([userInfo, zonesWithSedes]).subscribe({
       next: ([userInfo, zonesWithSedes]) => {
         this.tutorInfo = userInfo;
-        console.log(zonesWithSedes)
         this.zonesList = zonesWithSedes.map((zone: any) => {
           const ofGroups = zone.officesGroups;
           const sedes = ofGroups.flatMap((group: any) => group.groupOffices);

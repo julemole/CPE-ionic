@@ -41,11 +41,15 @@
       }
       @if(loadFileSrc) {
         <ion-item>
-          <ion-label>Anexo cargado:</ion-label>
+          <ion-label class="bk-text">Anexo cargado:</ion-label>
           @if(annexLocalPath){
-            <a (click)="openFile()" target="_blank">Ver anexo</a>
+            <a (click)="openFile()" target="_blank" style="text-decoration: underline;">Ver anexo</a>
           } @else {
-            <a [href]="loadFileSrc" target="_blank">Ver anexo</a>
+            @if(fileType === 'image'){
+              <a (click)="openPreview()" style="text-decoration: underline;">Ver anexo</a>
+            } @else {
+              <span>Documento cargado</span>
+            }
           }
         </ion-item>
       }
@@ -62,7 +66,7 @@
               type="file"
               class="file-input"
               (change)="onFileSelected($event)"
-              accept=".pdf, .jpg, .jpeg, .png, .svg"
+              accept=".pdf, .jpg, .jpeg, .png, .webp, .gif, .heic"
             />
           </div>
           <ion-button expand="block" [disabled]="attachId" (click)="scan()">
@@ -115,4 +119,23 @@
       </form>
     </section>
   }
+
+  @if(isPreviewOpen){
+    <ion-modal [isOpen]="isPreviewOpen" (ionModalDidDismiss)="closePreview()">
+      <ng-template>
+        <ion-content>
+          <ion-toolbar>
+            <ion-title class="ion-margin">Vista previa</ion-title>
+            <ion-buttons slot="end">
+              <ion-button color="light" (click)="closePreview()">Cerrar</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+          <div class="image-preview">
+            <img [src]="loadFileSrc" alt="Vista previa de la imagen" />
+          </div>
+        </ion-content>
+      </ng-template>
+    </ion-modal>
+  }
+
 </ion-content>

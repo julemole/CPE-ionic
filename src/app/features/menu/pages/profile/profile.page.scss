@@ -13,7 +13,7 @@
 
 ion-grid {
   border: 2px solid #000;
-  max-height: 85%;
+  max-height: 80%;
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
@@ -34,7 +34,10 @@ p {
 }
 
 .btn-ct {
+  margin-top: 1rem;
   display: flex;
+  flex-direction: column;
+  gap: .5rem;
   justify-content: center;
 }
 

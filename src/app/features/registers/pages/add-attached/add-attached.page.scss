@@ -39,3 +39,33 @@ ion-toolbar {
   justify-content: center;
   margin-top: 1rem;
 }
+
+
+ion-modal {
+  --height: 70%;
+  --width: 90%;
+  --border-radius: 16px;
+  --box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+ion-modal::part(backdrop) {
+  background: rgba(209, 213, 219);
+  opacity: 1;
+}
+
+ion-modal ion-toolbar {
+  --background: var(--ion-color-primary);
+  --color: white;
+}
+
+.image-preview{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 85%;
+  padding: 16px;
+}
+
+.bk-text{
+  font-weight: bold;
+}

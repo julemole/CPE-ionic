@@ -17,16 +17,12 @@ import {
   IonButtons,
   IonCard,
   IonIcon,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
   IonButton,
   IonInfiniteScrollContent,
   IonInfiniteScroll,
-  IonSelectOption,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { documentTextOutline, save } from 'ionicons/icons';
+import { documentTextOutline } from 'ionicons/icons';
 import { RegistersService } from 'src/app/features/registers/services/registers.service';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { RouterLinkWithHref } from '@angular/router';
@@ -42,11 +38,7 @@ import { ConnectivityService } from '../../../../shared/services/connectivity.se
     IonProgressBar,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
-    IonSelectOption,
     IonButton,
-    IonCardContent,
-    IonCardTitle,
-    IonCardHeader,
     IonBackButton,
     IonButtons,
     IonCard,
@@ -97,6 +89,7 @@ export class MyRegistersPage implements OnInit {
   getRegisters(idUser: string): void {
     this.registersService.getRegistersByUser(idUser).subscribe({
       next: (resp) => {
+        console.log(resp)
         this.myRegisters = resp;
         this.isLoading = false;
       },
@@ -112,11 +105,12 @@ export class MyRegistersPage implements OnInit {
       this.myRegisters = await this.registersService.getRegistersByUserOffline(
         idUser
       );
-      this.myRegisters.sort((a, b) => {
-        const dateA = new Date(a.date_created).getTime();
-        const dateB = new Date(b.date_created).getTime();
-
-        return dateB - dateA;
+      this.myRegisters.forEach(group => {
+        group.registros.sort((a: any, b: any) => {
+          const dateA = new Date(a.date_created).getTime();
+          const dateB = new Date(b.date_created).getTime();
+          return dateB - dateA;
+        });
       });
     } catch (error) {
       throw new Error('Error al obtener los registros');

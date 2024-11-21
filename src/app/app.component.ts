@@ -1,31 +1,27 @@
 import { firstValueFrom } from 'rxjs';
 import { Component, effect, signal, WritableSignal } from '@angular/core';
-import { IonApp, IonRouterOutlet, IonToast, AlertController, Platform, LoadingController } from '@ionic/angular/standalone';
+import { IonApp, IonRouterOutlet, AlertController, Platform, LoadingController } from '@ionic/angular/standalone';
 import { DatabaseService } from './shared/services/database.service';
 import { ConnectivityService } from './shared/services/connectivity.service';
-import { Annex, Evidence, Register, RegisterAnnex, RegisterEvidence } from './shared/models/entity.interface';
+import { Register } from './shared/models/entity.interface';
 import { LocalStorageService } from './core/services/local-storage.service';
 import { Router } from '@angular/router';
-import { SplashScreen } from '@capacitor/splash-screen';
 import { addIcons } from 'ionicons';
 import { wifiOutline } from 'ionicons/icons';
-import { base64ToBlob, blobToFile, getInfoFile } from './shared/utils/functions';
+import { base64ToBlob, blobToFile, formatDateToRFC3339, getInfoFile } from './shared/utils/functions';
 import { RegistersService } from './features/registers/services/registers.service';
 import { attachedData, PhotoData } from './shared/models/save-in-session.interface';
+import { SplashScreen } from '@capacitor/splash-screen';
 
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
   standalone: true,
-  imports: [IonApp, IonToast, IonRouterOutlet],
+  imports: [IonApp, IonRouterOutlet],
 })
 export class AppComponent {
   isOnline: WritableSignal<boolean> = signal(true);
   loading: HTMLIonLoadingElement | null = null;
-  // toastMsg: string = '';
-  // isOpen: boolean = false;
-  // private firstCheck: boolean = true;
-  // private wasOffline: boolean = false;
 
   constructor(private router: Router, private readonly database: DatabaseService, private connectivityService: ConnectivityService, private localSS: LocalStorageService,
     private alertController: AlertController, private platform: Platform, private loadingController: LoadingController, private registersService: RegistersService
@@ -33,27 +29,6 @@ export class AppComponent {
     this.isOnline = this.connectivityService.getNetworkStatus();
     addIcons({wifiOutline})
     this.initApp();
-    // effect(() => {
-    //   this.isOnline();
-    //   if (!this.isOnline() && !this.wasOffline) {
-    //     this.toastMsg = 'Sin conexión a internet';
-    //     this.isOpen = true;
-    //     this.wasOffline = true;
-    //   } else if (this.isOnline() && this.wasOffline) {
-    //     this.toastMsg = 'Conexión a internet restaurada';
-    //     this.isOpen = true;
-    //     this.wasOffline = false;
-    //   } else {
-    //     this.toastMsg = '';
-    //     this.isOpen = false;
-    //   }
-
-    //   if (this.firstCheck) {
-    //     this.firstCheck = false;
-    //     this.isOpen = false;
-    //   }
-    // });
-
     effect(() => {
       this.isOnline();
       const token = this.localSS.getItem('TOKEN');
@@ -61,8 +36,6 @@ export class AppComponent {
         this.syncOfflineRegisters();
       }
     });
-
-
   }
 
   async initApp() {
@@ -88,9 +61,9 @@ export class AppComponent {
     try {
       const unsyncedRegisters = await this.database.getUnsyncRegisters();
 
-      if(unsyncedRegisters.length){
+      if (unsyncedRegisters.length) {
         const csrf_token = this.localSS.getItem('CSRF_TOKEN');
-        if(!csrf_token){
+        if (!csrf_token) {
           const alert = await this.alertController.create({
             header: 'Advertencia',
             cssClass: 'warning-alert',
@@ -116,7 +89,14 @@ export class AppComponent {
         this.showLoading('Sincronizando registros, por favor espere...');
 
         for (const register of unsyncedRegisters) {
-          await this.syncSingleRegister(register, csrf_token);
+          try {
+            await this.syncSingleRegister(register, csrf_token);
+          } catch (error: any) {
+            // En caso de error en un solo registro, se muestra una alerta y se interrumpe la sincronización
+            await this.hideLoading();
+            await this.errorAlert(`Error al sincronizar el registro ${register.uuid}: ${error.message}`);
+            return;
+          }
         }
 
         await this.hideLoading();
@@ -131,11 +111,24 @@ export class AppComponent {
 
       }
 
-
-    } catch (error) {
+    } catch (error: any) {
+      await this.hideLoading();
       console.error('Error al sincronizar registros offline:', error);
+      await this.errorAlert(`Error al sincronizar registros offline: ${error.message}`);
     }
   }
+
+  // Alerta para mostrar errores
+  private async errorAlert(message: string) {
+    const alert = await this.alertController.create({
+      header: 'Error',
+      cssClass: 'error-alert',
+      message,
+      buttons: ['Aceptar']
+    });
+    await alert.present();
+  }
+
 
   private async syncSingleRegister(register: Register, csrfToken: string) {
     try {
@@ -145,25 +138,54 @@ export class AppComponent {
       let signatureObj = { file: signatureFile, idFile: '' };
 
       // Subir archivos: evidencias, anexos y firma
-      let evidences = await this.convertLocalEvidenceFiles(register.evidenceList!);
-      let annexes = await this.convertLocalAnnexFiles(register.annexList!);
+      let evidences;
+      let annexes;
+      try {
+        evidences = await this.convertLocalEvidenceFiles(register.evidenceList!);
+        annexes = await this.convertLocalAnnexFiles(register.annexList!);
+      } catch (error: any) {
+        throw new Error(`Error al convertir archivos locales de evidencias o anexos: ${error.message}`);
+      }
 
       // Subir todos los archivos al servidor y obtener sus ids
-      await this.uploadAllFiles(evidences, annexes, signatureObj, csrfToken);
+      try {
+        await this.uploadAllFiles(evidences, annexes, signatureObj, csrfToken);
+      } catch (error: any) {
+        throw new Error(`Error al subir los archivos al servidor: ${error.message}`);
+      }
 
-      // Crear evidencias y anexos en el servidor
-      await this.createAllEvidences(evidences, csrfToken);
-      await this.createAllAnnex(annexes, csrfToken);
+      // Crear evidencias en el servidor
+      try {
+        await this.createAllEvidences(evidences, csrfToken);
+      } catch (error: any) {
+        throw new Error(`Error al crear evidencias en el servidor: ${error.message}`);
+      }
+
+      // Crear anexos en el servidor
+      try {
+        await this.createAllAnnex(annexes, csrfToken);
+      } catch (error: any) {
+        throw new Error(`Error al crear anexos en el servidor: ${error.message}`);
+      }
 
       // Crear el registro completo en el servidor
-      await this.createRegisterInServer(register, evidences, annexes, signatureObj, csrfToken);
+      try {
+        await this.createRegisterInServer(register, evidences, annexes, signatureObj, csrfToken);
+      } catch (error: any) {
+        throw new Error(`Error al crear el registro en el servidor: ${error.message}`);
+      }
 
       // Marcar el registro como sincronizado en la base de datos local
-      await this.markRegisterAsSynced(register);
+      try {
+        await this.markRegisterAsSynced(register);
+      } catch (error: any) {
+        throw new Error(`Error al marcar el registro como sincronizado en la base de datos local: ${error.message}`);
+      }
 
       console.log(`Registro ${register.uuid} sincronizado correctamente.`);
-    } catch (error) {
-      console.error(`Error al sincronizar el registro ${register.uuid}:`, error);
+    } catch (error: any) {
+      // Mostrar mensaje de error específico de cada etapa de sincronización
+      console.error(`Error al sincronizar el registro ${register.uuid}: ${error.message}`);
     }
   }
 
@@ -230,8 +252,11 @@ export class AppComponent {
           csrf,
           'evidence',
           evidence
-        )
+        ).catch((error) => {
+          throw new Error(`Error al subir archivo de evidencia ${evidence.file && evidence.file.name}: ${error.message}`);
+        })
     );
+
     const annexPromises = annexes.map(
       (annex) =>
         annex.file &&
@@ -240,51 +265,51 @@ export class AppComponent {
           csrf,
           'annex',
           annex
-        )
+        ).catch((error) => {
+          throw new Error(`Error al subir archivo de anexo ${annex.file && annex.file.name}: ${error.message}`);
+        })
     );
+
     const signaturePromise = this.registersService.uploadFileAndSaveId(
       signature.file,
       csrf,
       'registry',
       signature
-    );
+    ).catch((error) => {
+      throw new Error(`Error al subir el archivo de firma: ${error.message}`);
+    });
 
-    try {
-      const results = await Promise.all([
-        ...evidencePromises,
-        ...annexPromises,
-        signaturePromise,
-      ]);
-      console.log('Todos los archivos han sido subidos:', results);
-    } catch (error) {
-      console.error('Error al subir los archivos:', error);
-    }
+    await Promise.all([
+      ...evidencePromises,
+      ...annexPromises,
+      signaturePromise,
+    ]);
   }
 
   private async createAllEvidences(photoDataArray: PhotoData[], csrfToken: string) {
     const promises = photoDataArray.map((photoData) =>
-      this.registersService.createEvidence(photoData, csrfToken, true)
+      this.registersService.createEvidence(photoData, csrfToken, true).catch((error) => {
+        console.error(`Error al crear evidencia ${photoData.name}:`, error.message);
+        throw new Error(`Error al crear evidencia ${photoData.name}: ${error.message}`);
+      })
     );
 
-    try {
-      const results = await Promise.all(promises);
-      console.log('Todas las evidencias han sido creadas:', results);
-    } catch (error) {
-      console.error('Error al crear las evidencias:', error);
-    }
+    await Promise.all(promises);
+
+    console.log('Todas las evidencias han sido creadas correctamente');
   }
 
   private async createAllAnnex(annexDataArray: attachedData[], csrfToken: string) {
     const promises = annexDataArray.map((annexData) =>
-      this.registersService.createAnnex(annexData, csrfToken, true)
+      this.registersService.createAnnex(annexData, csrfToken, true).catch((error) => {
+        console.error(`Error al crear anexo ${annexData.name}:`, error.message);
+        throw new Error(`Error al crear anexo ${annexData.name}: ${error.message}`);
+      })
     );
 
-    try {
-      const results = await Promise.all(promises);
-      console.log('Todos los anexos han sido creadas:', results);
-    } catch (error) {
-      console.error('Error al crear los anexos:', error);
-    }
+    await Promise.all(promises);
+
+    console.log('Todos los anexos han sido creados correctamente');
   }
 
   private async createRegisterInServer(
@@ -294,11 +319,13 @@ export class AppComponent {
     signatureFile: { file: File; idFile: string },
     csrfToken: string
   ) {
+    const field_date = formatDateToRFC3339(register.date_created!);
     const payload: any = {
       data: {
         type: 'node--registry',
         attributes: {
           title: register.name || 'Registro Offline',
+          field_date: field_date || formatDateToRFC3339(new Date()),
         },
         relationships: {
           field_activities: {
@@ -319,7 +346,13 @@ export class AppComponent {
               id: register.subactivity_uuid,
             },
           },
-          field_sede: {
+          field_teacher: {
+            data: {
+              type: 'node--teacher',
+              id: register.teacher_uuid,
+            },
+          },
+          field_institution: {
             data: {
               type: 'node--offices',
               id: register.sede_uuid,
@@ -337,31 +370,26 @@ export class AppComponent {
 
     if (evidences.length) {
       payload.data.relationships.field_evidence = {
-        data: evidences.map((photo: PhotoData) => {
-          return {
-            type: 'node--evidence',
-            id: photo.idEvidence,
-          };
-        }),
+        data: evidences.map((photo: PhotoData) => ({
+          type: 'node--evidence',
+          id: photo.idEvidence,
+        })),
       };
     }
 
     if (annexes.length) {
       payload.data.relationships.field_annex = {
-        data: annexes.map((attached: attachedData) => {
-          return {
-            type: 'node--annex',
-            id: attached.idAnnex,
-          };
-        }),
+        data: annexes.map((attached: attachedData) => ({
+          type: 'node--annex',
+          id: attached.idAnnex,
+        })),
       };
     }
 
     try {
       await firstValueFrom(this.registersService.createRegister(payload, csrfToken));
-    } catch (error) {
-      console.error('Error al crear el registro en el servidor:', error);
-      throw error;
+    } catch (error: any) {
+      throw new Error(`Error al crear el registro en el servidor: ${error.message || error.error?.message || error}`);
     }
   }
 
@@ -369,8 +397,8 @@ export class AppComponent {
     try {
       register.is_synced = 1;
       await this.database.updateRegister(register);
-    } catch (error) {
-      console.error('Error al marcar el registro como sincronizado:', error);
+    } catch (error: any) {
+      throw new Error(`Error al marcar el registro como sincronizado: ${error.message || error}`);
     }
   }
 

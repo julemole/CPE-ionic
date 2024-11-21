@@ -1,0 +1,74 @@
+<ion-header [translucent]="true">
+  <ion-toolbar class="toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/profile"></ion-back-button>
+    </ion-buttons>
+    <ion-title> Nueva contraseña </ion-title>
+    <ion-buttons slot="start">
+      <ion-button>
+        <ion-icon name="lock-closed-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <form class="form-container ion-padding">
+    <div class="w-100">
+      <ion-input
+        class="inp-style"
+        label="Contraseña actual"
+        label-placement="floating"
+        fill="outline"
+        [type]="showCurrentPass ? 'text' : 'password'"
+        [formControl]="currentPass"
+        helperText="Escribe tu contraseña actual"
+        errorText="Campo obligatorio"
+      >
+        @if(showCurrentPass){
+        <ion-icon
+          name="eye-off-outline"
+          class="icon"
+          (click)="showCurrentPassword()"
+        ></ion-icon>
+        } @else {
+        <ion-icon
+          name="eye-outline"
+          class="icon"
+          (click)="showCurrentPassword()"
+        ></ion-icon>
+        }
+      </ion-input>
+    </div>
+    <div class="w-100">
+      <ion-input
+        class="inp-style"
+        label="Nueva contraseña"
+        label-placement="floating"
+        fill="outline"
+        [type]="showNewPass ? 'text' : 'password'"
+        [formControl]="newPass"
+        helperText="Escribe tu nueva contraseña"
+        errorText="Campo obligatorio"
+      >
+        @if(showNewPass){
+        <ion-icon
+          name="eye-off-outline"
+          class="icon"
+          (click)="showNewPassword()"
+        ></ion-icon>
+        } @else {
+        <ion-icon
+          name="eye-outline"
+          class="icon"
+          (click)="showNewPassword()"
+        ></ion-icon>
+        }
+      </ion-input>
+    </div>
+    <ion-button expand="block" (click)="changePass()">
+      <ion-icon slot="start" name="lock-closed-outline"></ion-icon>
+      Cambiar contraseña
+    </ion-button>
+  </form>
+</ion-content>

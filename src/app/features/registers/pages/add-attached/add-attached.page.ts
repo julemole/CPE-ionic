@@ -22,31 +22,28 @@ import {
   IonToolbar,
   IonButtons,
   IonBackButton,
-  IonGrid,
-  IonCol,
-  IonRow,
   IonTextarea,
   IonInput,
   IonButton,
   IonIcon,
-  IonSelect,
   IonSelectOption,
+  IonSelect,
   IonItem,
-  IonLabel, IonImg } from '@ionic/angular/standalone';
-import { ActivatedRoute, RouterLinkWithHref } from '@angular/router';
+  IonLabel, IonImg, IonModal } from '@ionic/angular/standalone';
+import { ActivatedRoute } from '@angular/router';
 import { addIcons } from 'ionicons';
 import {
   documentAttachOutline,
   cloudUpload,
-  scanCircleOutline,
-} from 'ionicons/icons';
+  scanCircleOutline, close } from 'ionicons/icons';
 import { SaveInSessionService } from 'src/app/shared/services/save-in-session.service';
 import { getInfoFile, loadSignatureFile } from 'src/app/shared/utils/functions';
 import { RegistersService } from '../../services/registers.service';
 import { ConnectivityService } from '../../../../shared/services/connectivity.service';
 import { CameraService } from 'src/app/shared/services/camera.service';
-import { AlertController, Platform } from '@ionic/angular/standalone';
+import { AlertController, Platform, LoadingController } from '@ionic/angular/standalone';
 import { FileOpener, FileOpenerOptions } from '@capacitor-community/file-opener';
+import { DomSanitizer } from '@angular/platform-browser';
 
 
 @Component({
@@ -54,7 +51,7 @@ import { FileOpener, FileOpenerOptions } from '@capacitor-community/file-opener'
   templateUrl: './add-attached.page.html',
   styleUrls: ['./add-attached.page.scss'],
   standalone: true,
-  imports: [IonImg,
+  imports: [IonModal, IonImg,
     IonItem,
     IonProgressBar,
     IonLabel,
@@ -69,18 +66,15 @@ import { FileOpener, FileOpenerOptions } from '@capacitor-community/file-opener'
     IonToolbar,
     IonButtons,
     IonBackButton,
-    IonGrid,
-    IonCol,
-    IonRow,
     IonTextarea,
     CommonModule,
     ReactiveFormsModule,
-    RouterLinkWithHref,
   ],
 })
 export class AddAttachedPage implements OnInit {
   isOnline: WritableSignal<boolean> = signal(true);
   isLoading: boolean = false;
+  loading: HTMLIonLoadingElement | null = null;
 
   fb: FormBuilder = inject(FormBuilder);
   attachedForm: FormGroup = this.fb.group({
@@ -93,24 +87,28 @@ export class AddAttachedPage implements OnInit {
   file: File | null = null;
   scanImgSrc: string | null = null;
   originalImageData: any;
-  loadFileSrc: string = '';
+  loadFileSrc: string | any = '';
   annexLocalPath: string = '';
   institutionId: string = '';
   attachId: string = '';
   idRegister: string = '';
+  isPreviewOpen = false;
+  fileType: string = ''
 
   attachedData: WritableSignal<attachedData[]> = signal<attachedData[]>([]);
 
   constructor(
     private aRoute: ActivatedRoute,
+    private sanitizer: DomSanitizer,
     private saveInSessionService: SaveInSessionService,
     private registersService: RegistersService,
     private connectivityService: ConnectivityService,
     private cameraService: CameraService,
     private alertController: AlertController,
+    private loadingController: LoadingController,
     private platform: Platform
   ) {
-    addIcons({ documentAttachOutline, cloudUpload, scanCircleOutline });
+    addIcons({documentAttachOutline,cloudUpload,scanCircleOutline,close});
     this.isOnline = this.connectivityService.getNetworkStatus();
     this.attachedData = this.saveInSessionService.getAttachedData();
   }
@@ -181,8 +179,8 @@ export class AddAttachedPage implements OnInit {
         openWithDefault: true,
       };
       await FileOpener.open(fileOpenerOptions);
-    } catch (error) {
-      console.error('Error al abrir el archivo:', JSON.stringify(error));
+    } catch (error: any) {
+      console.error(`Error al abrir el archivo: ${error.message || error.error?.message || error}`);
     }
   }
 
@@ -205,6 +203,7 @@ export class AddAttachedPage implements OnInit {
       description,
       file: this.file,
       url: this.loadFileSrc || this.scanImgSrc,
+      fileType: this.fileType,
       urlType: this.loadFileSrc ? 'doc' : 'img',
     };
 
@@ -222,6 +221,7 @@ export class AddAttachedPage implements OnInit {
     if (currentAttachedData) {
       this.attachedForm.patchValue(currentAttachedData);
       if (currentAttachedData.urlType === 'doc') {
+        this.fileType = currentAttachedData.fileType!;
         this.loadFileSrc = currentAttachedData.url!;
         this.scanImgSrc = '';
       } else {
@@ -232,7 +232,9 @@ export class AddAttachedPage implements OnInit {
     }
   }
 
-  changeColor() {
+  async changeColor() {
+
+    await this.showLoading();
     if (this.color.value == 'grayscale') {
       this.convertImage('grayscale');
     }
@@ -248,35 +250,46 @@ export class AddAttachedPage implements OnInit {
 
   async onFileSelected(event: any) {
     const file: File = event.target.files[0];
-
-    const maxSizeInMB = 2;
+    const maxSizeInMB = 10;
     const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+
     if (file.size > maxSizeInBytes) {
-      await this.alert('El archivo no debe pesar más de 2MB.');
+      await this.alert('El archivo no debe pesar más de 10MB.');
       return;
     }
 
     if (file) {
       this.file = file;
+      this.fileType = file.type.includes('pdf') ? 'pdf' : 'image';
+
       const fileUrl = URL.createObjectURL(file);
-      this.loadFileSrc = fileUrl;
+      this.loadFileSrc = this.sanitizer.bypassSecurityTrustResourceUrl(fileUrl);
     }
+  }
+
+  openPreview() {
+    this.isPreviewOpen = true;
+  }
+
+  closePreview() {
+    this.isPreviewOpen = false;
   }
 
 
   async scan() {
-    const locationData = await this.cameraService.takePictureAndGetData();
+    const locationData = await this.cameraService.takePictureScan();
     this.originalImageData = locationData;
     this.scanImgSrc = locationData.imagePath;
-    const maxSizeInMB = 2;
+    const maxSizeInMB = 10;
     const file = locationData.file;
     const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
     if (file.size > maxSizeInBytes) {
-      await this.alert('El archivo no debe pesar más de 2MB.');
+      await this.alert('El archivo no debe pesar más de 10MB.');
       return;
     }
     this.file = locationData.file;
     this.color.setValue('grayscale');
+    await this.showLoading();
     this.convertImage('grayscale');
   }
 
@@ -287,7 +300,7 @@ export class AddAttachedPage implements OnInit {
     img.src = this.scanImgSrc!;
 
     if (ctx) {
-      img.onload = () => {
+      img.onload = async () => {
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
@@ -332,7 +345,8 @@ export class AddAttachedPage implements OnInit {
             const compressedImageSrc = URL.createObjectURL(blob);
             this.scanImgSrc = compressedImageSrc;
           }
-        }, 'image/jpeg', 0.8); // Aquí puedes ajustar la calidad: 0.8 es un buen equilibrio entre calidad y tamaño.
+        }, 'image/jpeg', 0.8);
+        await this.hideLoading();
       };
     }
   }
@@ -340,6 +354,7 @@ export class AddAttachedPage implements OnInit {
   resetImage() {
     this.scanImgSrc = this.originalImageData.imagePath;
     this.file = this.originalImageData.file;
+    this.hideLoading();
   }
 
   async alert(message: string) {
@@ -355,5 +370,19 @@ export class AddAttachedPage implements OnInit {
     });
 
     await alert.present();
+  }
+
+  async showLoading() {
+    if (!this.loading) {
+      this.loading = await this.loadingController.create();
+      await this.loading.present();
+    }
+  }
+
+  async hideLoading() {
+    if (this.loading) {
+      await this.loading.dismiss();
+      this.loading = null;
+    }
   }
 }

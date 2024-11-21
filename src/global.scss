@@ -86,18 +86,13 @@ th {
   font-size: 1.2rem;
 }
 
-// tr > td:last-child {
-//   font-size: 1.2rem;
-//   text-transform: capitalize;
-// }
-
-.registers-table th:first-child, td:first-child {
-  width: 35%;
+.table-container .first-column-width {
+  width: 35%;/* Cambia 150px al ancho que desees */
 }
 
-// .act-table th:last-child, td:last-child {
-//   width: 40%;
-// }
+.table-container td:first-child {
+  width: 35%;/* Asegura que todas las primeras columnas mantengan el ancho */
+}
 
 //alert
 .error-alert .alert-head {

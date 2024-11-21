@@ -104,7 +104,11 @@
 
 @if(!isLoading){
   <div class="btn-ct">
-    <ion-button class="ion-margin-vertical" expand="stacked" (click)="logout()">
+    <ion-button expand="stacked" color="medium" (click)="goToChangePage()">
+      <ion-icon name="refresh-outline" slot="start"></ion-icon>
+      Cambiar contraseña
+    </ion-button>
+    <ion-button expand="stacked" (click)="logout()">
       <ion-icon name="log-out-outline" slot="start"></ion-icon>
       Cerrar sesión
     </ion-button>

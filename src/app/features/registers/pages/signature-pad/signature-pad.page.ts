@@ -1,9 +1,8 @@
-import { AfterViewInit, Component, OnInit, signal, ViewChild, WritableSignal } from '@angular/core';
+import { AfterViewInit, Component, signal, ViewChild, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons, IonBackButton, IonIcon } from '@ionic/angular/standalone';
 import SignaturePad from 'signature_pad';
-import { base64ToBlob, blobToFile } from 'src/app/shared/utils/functions';
 import { addIcons } from 'ionicons';
 import { createOutline, trash } from 'ionicons/icons';
 import { SaveInSessionService } from 'src/app/shared/services/save-in-session.service';
@@ -41,13 +40,6 @@ export class SignaturePadPage implements AfterViewInit {
   clearSignature() {
     this.signaturePad.clear();
   }
-
-  // saveSignature() {
-  //   const base64Data = this.signaturePad.toDataURL('image/png');
-  //   const blob = base64ToBlob(base64Data, 'image/png');
-  //   const file = blobToFile(blob, 'signature.png');
-  //   console.log(blob)
-  // }
 
   saveSignature() {
     this.editSignature = false;

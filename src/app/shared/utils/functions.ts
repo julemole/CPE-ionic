@@ -1,4 +1,5 @@
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+const piexif = require('piexifjs');
 
 export const base64ToBlob = (base64: string, contentType: string): Blob => {
   const byteCharacters = atob(base64.split(',')[1]);
@@ -14,24 +15,6 @@ export const blobToFile = (blob: Blob, fileName: string): File => {
   return new File([blob], fileName, { type: blob.type });
 }
 
-export const convertFileToBase64String = (file: File) => {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.addEventListener('load', () => {
-      const result = reader.result;
-
-      if (!result) {
-        reject('result is null');
-        return;
-      }
-
-      resolve(reader.result.toString());
-    });
-    reader.addEventListener('error', reject);
-    reader.readAsDataURL(file);
-  });
-}
-
 export const downloadAndSaveFile = async (file: {url: string, filename: string}): Promise<string> => {
   try {
     const response = await fetch(file.url);
@@ -42,6 +25,21 @@ export const downloadAndSaveFile = async (file: {url: string, filename: string})
 
     // Crear un lector de archivos
     const reader = new FileReader();
+    if (blob.type === 'image/jpeg'){
+      const base64data = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject('Error al leer el archivo como base64');
+        reader.readAsDataURL(blob);
+      });
+
+      // **Verificar datos EXIF**
+      const exif = piexif.load(base64data);
+      if (Object.keys(exif).length === 0) {
+        console.warn('No se encontraron datos EXIF en la imagen descargada');
+      } else {
+        console.log('Datos EXIF encontrados:', exif, JSON.stringify(exif));
+      }
+    }
 
     return new Promise((resolve, reject) => {
       reader.onloadend = async () => {
@@ -240,4 +238,17 @@ const normalizeFilePath = (filePath: string): string => {
   return filePath;
 }
 
+export const formatDateToRFC3339 = (dateInput: Date | string): string => {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+
+  // Formato RFC 3339: YYYY-MM-DDTHH:MM:SSZ
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}Z`;
+}
 

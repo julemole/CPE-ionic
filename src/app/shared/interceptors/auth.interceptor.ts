@@ -1,12 +1,8 @@
-import { inject, Injectable } from '@angular/core';
+import { inject } from '@angular/core';
 import {
-  HttpRequest,
-  HttpHandler,
-  HttpEvent,
   HttpContextToken,
   HttpInterceptorFn
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 
 export const NO_INTERCEPT = new HttpContextToken<boolean>(() => false);

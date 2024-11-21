@@ -1,10 +1,9 @@
-import { Injectable, signal, WritableSignal } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
-import { User, StateParametric, Annex, Evidence, Region, Sede, SedesGroup, SedesGroupSede, Zone, ZoneUsers,
-  ZoneSedesGroup, Register, RegisterAnnex, RegisterEvidence,
+import { User, StateParametric, Annex, Evidence, Sede, SedesGroup, Zone, Register,
 SyncLog,
 Parametric,
-UserSettings
+Teacher
  } from '../models/entity.interface';
 
 const DB_USERS = 'myuser';
@@ -16,26 +15,6 @@ export class DatabaseService {
 
   private readonly sqlite: SQLiteConnection = new SQLiteConnection(CapacitorSQLite);
   private db!: SQLiteDBConnection;
-  private user: WritableSignal<User[]> = signal<User[]>([]);
-  private stateParametrics: WritableSignal<StateParametric[]> = signal<StateParametric[]>([]);
-  private departments: WritableSignal<Parametric[]> = signal<Parametric[]>([]);
-  private approaches: WritableSignal<Parametric[]> = signal<Parametric[]>([]);
-  private activities: WritableSignal<Parametric[]> = signal<Parametric[]>([]);
-  private subactivities: WritableSignal<Parametric[]> = signal<Parametric[]>([]);
-  private locations: WritableSignal<Parametric[]> = signal<Parametric[]>([]);
-  private municipalities: WritableSignal<Parametric[]> = signal<Parametric[]>([]);
-  private annexes: WritableSignal<Annex[]> = signal<Annex[]>([]);
-  private evidences: WritableSignal<Evidence[]> = signal<Evidence[]>([]);
-  private regions: WritableSignal<Region[]> = signal<Region[]>([]);
-  private sedes: WritableSignal<Sede[]> = signal<Sede[]>([]);
-  private sedesGroups: WritableSignal<SedesGroup[]> = signal<SedesGroup[]>([]);
-  private sedesGroupSedes: WritableSignal<SedesGroupSede[]> = signal<SedesGroupSede[]>([]);
-  private zones: WritableSignal<Zone[]> = signal<Zone[]>([]);
-  private zoneUsers: WritableSignal<ZoneUsers[]> = signal<ZoneUsers[]>([]);
-  private zoneSedesGroups: WritableSignal<ZoneSedesGroup[]> = signal<ZoneSedesGroup[]>([]);
-  private registers: WritableSignal<Register[]> = signal<Register[]>([]);
-  private registerAnnexes: WritableSignal<RegisterAnnex[]> = signal<RegisterAnnex[]>([]);
-  private registerEvidences: WritableSignal<RegisterEvidence[]> = signal<RegisterEvidence[]>([]);
 
   async initilizPlugin() {
     this.db = await this.sqlite.createConnection(
@@ -57,12 +36,6 @@ export class DatabaseService {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       sync_date TEXT NOT NULL,
       details TEXT
-    );`;
-
-    const user_settings = `CREATE TABLE IF NOT EXISTS user_settings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      app_theme TEXT,
-      size_text TEXT
     );`;
 
     const users = `CREATE TABLE IF NOT EXISTS users (
@@ -125,6 +98,18 @@ export class DatabaseService {
 
     /****************************** NODES  *******************************************/
 
+    const teacher = `CREATE TABLE IF NOT EXISTS teacher (
+      uuid TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      document_type TEXT,
+      document_number TEXT,
+      mail TEXT,
+      phone TEXT,
+      state_uuid TEXT,
+      status INTEGER NOT NULL,
+      FOREIGN KEY (state_uuid) REFERENCES state_parametric(uuid)
+    );`;
+
     const annex = `CREATE TABLE IF NOT EXISTS annex (
       uuid TEXT PRIMARY KEY NOT NULL,
       server_uuid TEXT,
@@ -158,6 +143,7 @@ export class DatabaseService {
       uuid TEXT PRIMARY KEY NOT NULL,
       name TEXT NOT NULL,
       code_dane TEXT,
+      based TEXT,
       address TEXT,
       date_created TEXT,
       department_uuid TEXT,
@@ -170,6 +156,16 @@ export class DatabaseService {
       FOREIGN KEY (municipality_uuid) REFERENCES municipality(uuid),
       FOREIGN KEY (state_uuid) REFERENCES state_parametric(uuid)
     );`;
+
+    const sedeTeacher = `
+      CREATE TABLE IF NOT EXISTS sede_teacher (
+        sede_uuid TEXT NOT NULL,
+        teacher_uuid TEXT NOT NULL,
+        PRIMARY KEY (sede_uuid, teacher_uuid),
+        FOREIGN KEY (sede_uuid) REFERENCES sedes(uuid) ON DELETE CASCADE,
+        FOREIGN KEY (teacher_uuid) REFERENCES teacher(uuid) ON DELETE CASCADE
+      );
+    `;
 
     const sedes_group = `CREATE TABLE IF NOT EXISTS sedes_group (
       uuid TEXT PRIMARY KEY NOT NULL,
@@ -226,6 +222,7 @@ export class DatabaseService {
       approach_uuid TEXT,
       activity_uuid TEXT,
       subactivity_uuid TEXT,
+      teacher_uuid TEXT,
       sede_uuid TEXT,
       user_uuid TEXT,
       is_synced INTEGER NOT NULL DEFAULT 0,
@@ -234,6 +231,7 @@ export class DatabaseService {
       FOREIGN KEY (approach_uuid) REFERENCES approach(uuid),
       FOREIGN KEY (activity_uuid) REFERENCES activity(uuid),
       FOREIGN KEY (subactivity_uuid) REFERENCES subactivity(uuid),
+      FOREIGN KEY (teacher_uuid) REFERENCES teacher(uuid),
       FOREIGN KEY (sede_uuid) REFERENCES sedes(uuid)
     );`;
 
@@ -259,7 +257,6 @@ export class DatabaseService {
 
     await this.db.execute(`PRAGMA foreign_keys = ON;`);
     await this.db.execute(sync_log);
-    await this.db.execute(user_settings);
     await this.db.execute(users);
     await this.db.execute(stateParametric);
     await this.db.execute(department);
@@ -268,10 +265,11 @@ export class DatabaseService {
     await this.db.execute(subactivity);
     await this.db.execute(location);
     await this.db.execute(municipality);
+    await this.db.execute(teacher);
     await this.db.execute(annex);
     await this.db.execute(evidence);
-    // await this.db.execute(region);
     await this.db.execute(sedes);
+    await this.db.execute(sedeTeacher);
     await this.db.execute(sedes_group);
     await this.db.execute(sedes_group_sede);
     await this.db.execute(zone);
@@ -280,97 +278,6 @@ export class DatabaseService {
     await this.db.execute(register);
     await this.db.execute(register_annex);
     await this.db.execute(register_evidence);
-
-    // // Crear índices
-    // const indexUserName = `CREATE INDEX IF NOT EXISTS idx_user_name ON users (username);`;
-    // const indexDepartmentName = `CREATE INDEX IF NOT EXISTS idx_department_name ON department (name);`;
-    // const indexActivityName = `CREATE INDEX IF NOT EXISTS idx_activity_name ON activity (name);`;
-    // const indexSubActivityName = `CREATE INDEX IF NOT EXISTS idx_subactivity_name ON subactivity (name);`;
-
-    // await this.db.execute(indexUserName);
-    // await this.db.execute(indexDepartmentName);
-    // await this.db.execute(indexActivityName);
-    // await this.db.execute(indexSubActivityName);
-  }
-
-  getUserList() {
-    return this.user;
-  }
-
-  getStateParametricList() {
-    return this.stateParametrics;
-  }
-
-  getDepartmentList() {
-    return this.departments;
-  }
-
-  getApproachList() {
-    return this.approaches;
-  }
-
-  getActivityList() {
-    return this.activities;
-  }
-
-  getSubActivityList() {
-    return this.subactivities;
-  }
-
-  getLocationList() {
-    return this.locations;
-  }
-
-  getMunicipalityList() {
-    return this.municipalities;
-  }
-
-  getAnnexList() {
-    return this.annexes;
-  }
-
-  getEvidenceList() {
-    return this.evidences;
-  }
-
-  getRegionList() {
-    return this.regions;
-  }
-
-  getSedeList() {
-    return this.sedes;
-  }
-
-  getSedesGroupList() {
-    return this.sedesGroups;
-  }
-
-  getSedesGroupSedeList() {
-    return this.sedesGroupSedes;
-  }
-
-  getZoneList() {
-    return this.zones;
-  }
-
-  getZoneUserList() {
-    return this.zoneUsers;
-  }
-
-  getZoneSedesGroupList() {
-    return this.zoneSedesGroups;
-  }
-
-  getRegisterList() {
-    return this.registers;
-  }
-
-  getRegisterAnnexList() {
-    return this.registerAnnexes;
-  }
-
-  getRegisterEvidenceList() {
-    return this.registerEvidences;
   }
 
   // CRUD SyncLog
@@ -386,19 +293,6 @@ export class DatabaseService {
     return result;
   }
 
-  // CRUD UserSettings
-
-  async loadUserSettings() {
-    const userSettings = await this.db.query('SELECT * FROM user_settings;');
-    return userSettings.values || [];
-  }
-
-  async addUserSettings(userSettings: Partial<UserSettings>) {
-    const query = `INSERT INTO user_settings (app_theme, size_text) VALUES ('${userSettings.app_theme}', '${userSettings.size_text}');`;
-    const result = await this.db.run(query);
-    return result;
-  }
-
   // CRUD Users
 
   async getUserById(uuid: string): Promise<User | null> {
@@ -410,8 +304,12 @@ export class DatabaseService {
       WHERE u.uuid = '${uuid}'
       GROUP BY u.uuid, d.name;
     `;
-    const user = await this.db.query(query);
-    return user?.values?.[0] || null;
+
+    const userResult = await this.db.query(query);
+    const user = userResult?.values?.[0] || null;
+
+    // Retornar el usuario con el nombre del departamento si existe
+    return user ? { ...user, department_name: user.department_name } : null;
   }
 
   async getUserByUsername(username: string): Promise<User | null> {
@@ -483,12 +381,18 @@ export class DatabaseService {
     return result;
   }
 
-  // CRUD StateParametric
+  async updateUserPasswordById(uuid: string, newPassword: string) {
+    const query = `
+      UPDATE users
+      SET password = ?
+      WHERE uuid = ?;
+    `;
 
-  async loadStateParametrics() {
-    const stateParametrics = await this.db.query('SELECT * FROM state_parametric;');
-    this.stateParametrics.set(stateParametrics.values || []);
+    const result = await this.db.run(query, [newPassword, uuid]);
+    return result;
   }
+
+  // CRUD StateParametric
 
   async addStateParametric(stateParametric: Partial<StateParametric>) {
     const query = `
@@ -500,11 +404,6 @@ export class DatabaseService {
   }
 
   // CRUD Department
-
-  async loadDepartments() {
-    const departments = await this.db.query('SELECT * FROM department;');
-    this.departments.set(departments.values || []);
-  }
 
   async addDepartment(department: Partial<Parametric>) {
     const query = `
@@ -520,7 +419,6 @@ export class DatabaseService {
   async loadApproaches() {
     const approaches = await this.db.query('SELECT * FROM approach;');
     return approaches.values || [];
-    // this.approaches.set(approaches.values || []);
   }
 
   async addApproach(approach: Partial<Parametric>) {
@@ -537,7 +435,6 @@ export class DatabaseService {
   async loadActivities() {
     const activities = await this.db.query('SELECT * FROM activity;');
     return activities.values || [];
-    // this.activities.set(activities.values || []);
   }
 
   async addActivity(activity: Partial<Parametric>) {
@@ -554,7 +451,6 @@ export class DatabaseService {
   async loadSubactivities() {
     const subactivities = await this.db.query('SELECT * FROM subactivity;');
     return subactivities.values || [];
-    // this.subactivities.set(subactivities.values || []);
   }
 
   async addSubactivity(subactivity: Partial<Parametric>) {
@@ -567,11 +463,6 @@ export class DatabaseService {
   }
 
   // CRUD Location
-
-  async loadLocations() {
-    const locations = await this.db.query('SELECT * FROM location;');
-    this.locations.set(locations.values || []);
-  }
 
   async addLocation(location: Partial<Parametric>) {
     const query = `
@@ -600,28 +491,51 @@ export class DatabaseService {
 
   /*********************************************** NODES *************************************************/
 
-  // CRUD Annex
+  //CRUD Teacher
 
-  async loadAnnexes() {
-    const annexes = await this.db.query('SELECT * FROM annex;');
-    this.annexes.set(annexes.values || []);
+  async loadTeachers() {
+    const teachers = await this.db.query('SELECT * FROM teacher;');
+    return teachers.values || [];
   }
 
-  async getUnsyncAnnexes() {
+  async getTeacherById(uuid: string): Promise<Teacher | null> {
     const query = `
       SELECT *
-      FROM annex
-      WHERE is_synced = 0;
+      FROM teacher
+      WHERE uuid = ?;
     `;
 
     try {
-      const result = await this.db.query(query);
-      return result.values || [];
+      const result = await this.db.query(query, [uuid]);
+      return result?.values?.[0] || null;  // Retorna el primer teacher o null si no encuentra
     } catch (error) {
-      console.error('Error al obtener los anexos no sincronizados:', error);
-      return [];
+      console.error('Error cargando el teacher por uuid:', error);
+      return null;
     }
+}
+
+
+  async addTeacher(teacher: Partial<Teacher>) {
+    const query = `
+      INSERT INTO teacher (uuid, name, document_type, document_number, mail, phone, state_uuid, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    `;
+
+    const result = await this.db.run(query, [
+      teacher.uuid,
+      teacher.name,
+      teacher.document_type || null,
+      teacher.document_number || null,
+      teacher.mail || null,
+      teacher.phone || null,
+      teacher.state_uuid || null,
+      teacher.status || 1
+    ]);
+
+    return result;
   }
+
+  // CRUD Annex
 
   async getAnnexById(uuid: string): Promise<Annex | null> {
     const query = `
@@ -745,29 +659,7 @@ export class DatabaseService {
     return result;
   }
 
-
   // CRUD Evidence
-
-  async loadEvidences() {
-    const evidences = await this.db.query('SELECT * FROM evidence;');
-    this.evidences.set(evidences.values || []);
-  }
-
-  async getUnsyncEvidences() {
-    const query = `
-      SELECT *
-      FROM evidence
-      WHERE is_synced = 0;
-    `;
-
-    try {
-      const result = await this.db.query(query);
-      return result.values || [];
-    } catch (error) {
-      console.error('Error al obtener las evidencias no sincronizadas:', error);
-      return [];
-    }
-  }
 
   async getEvidenceById(uuid: string): Promise<Evidence | null> {
     const query = `
@@ -904,7 +796,6 @@ export class DatabaseService {
     return result;
   }
 
-
   // CRUD Sede
 
   async loadSedes() {
@@ -928,16 +819,16 @@ export class DatabaseService {
     }
   }
 
-
   async addSede(sede: Partial<Sede>) {
     const query = `
-      INSERT INTO sedes (uuid, name, code_dane, address, date_created, department_uuid, location_uuid, municipality_uuid, state_uuid, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+      INSERT INTO sedes (uuid, name, code_dane, based, address, date_created, department_uuid, location_uuid, municipality_uuid, state_uuid, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
     const values = [
       sede.uuid,
       sede.name,
       sede.code_dane,
+      sede.based,
       sede.address,
       sede.date_created,
       sede.department_uuid ?? null,
@@ -948,6 +839,17 @@ export class DatabaseService {
     ];
 
     const result = await this.db.run(query, values);
+    return result;
+  }
+
+  //CRUD SedeTeacher
+
+  async addTeacherToSede(sedeUuid: string, teacherUuid: string) {
+    const query = `
+      INSERT INTO sede_teacher (sede_uuid, teacher_uuid)
+      VALUES ('${sedeUuid}', '${teacherUuid}');
+    `;
+    const result = await this.db.run(query);
     return result;
   }
 
@@ -985,11 +887,6 @@ export class DatabaseService {
 
   // CRUD SedesGroupSede (Relación muchos a muchos)
 
-  async loadSedesGroupSedes() {
-    const sedesGroupSedes = await this.db.query('SELECT * FROM sedes_group_sede;');
-    this.sedesGroupSedes.set(sedesGroupSedes.values || []);
-  }
-
   async addSedeToSedesGroup(sedesGroupUuid: string, sedeUuid: string) {
     const query = `
       INSERT INTO sedes_group_sede (sedes_group_uuid, sede_uuid)
@@ -1010,19 +907,24 @@ export class DatabaseService {
     const query = `
       SELECT
         z.uuid AS zone_uuid, z.name AS zone_name, z.date_created AS zone_date_created, z.status AS zone_status,
+        z.department_uuid AS zone_department_uuid, d.name AS department_name,  -- Obtener nombre del departamento
         sg.uuid AS sedes_group_uuid, sg.name AS sedes_group_name, sg.date_created AS sedes_group_date_created,
         m.name AS municipality_name,
-        s.uuid AS sede_uuid, s.name AS sede_name, s.date_created AS sede_date_created, s.status AS sede_status,
-        s.department_uuid, s.location_uuid, s.municipality_uuid, s.state_uuid
+        s.uuid AS sede_uuid, s.name AS sede_name, s.date_created AS sede_date_created, s.status AS sede_status, s.based AS sede_based,
+        s.department_uuid, s.location_uuid, s.municipality_uuid, s.state_uuid,
+        t.uuid AS teacher_uuid, t.name AS teacher_name
       FROM zone z
       LEFT JOIN zone_users zu ON z.uuid = zu.zone_uuid
+      LEFT JOIN department d ON z.department_uuid = d.uuid  -- Relación con la tabla de departamentos
       LEFT JOIN zone_sedes_group zsg ON z.uuid = zsg.zone_uuid
       LEFT JOIN sedes_group sg ON zsg.sedes_group_uuid = sg.uuid
       LEFT JOIN municipality m ON sg.municipality_uuid = m.uuid
       LEFT JOIN sedes_group_sede sgs ON sg.uuid = sgs.sedes_group_uuid
       LEFT JOIN sedes s ON sgs.sede_uuid = s.uuid
+      LEFT JOIN sede_teacher st ON s.uuid = st.sede_uuid
+      LEFT JOIN teacher t ON st.teacher_uuid = t.uuid
       WHERE zu.user_uuid = ?
-      ORDER BY z.uuid, sg.uuid, s.uuid;
+      ORDER BY z.uuid, sg.uuid, s.uuid, t.uuid;
     `;
 
     try {
@@ -1039,6 +941,7 @@ export class DatabaseService {
             name: row.zone_name,
             date_created: row.zone_date_created,
             status: row.zone_status,
+            department: row.department_name,  // Agregar el nombre del departamento
             sedes_groups: []
           });
         }
@@ -1052,24 +955,41 @@ export class DatabaseService {
             uuid: row.sedes_group_uuid,
             name: row.sedes_group_name,
             date_created: row.sedes_group_date_created,
-            municipality: row.municipality_name,  // Añadir el nombre del municipio
+            municipality: row.municipality_name,
             sedes: []
           };
           zone.sedes_groups.push(sedesGroup);
         }
 
         // Agregar la sede al grupo de sedes
-        if (row.sede_uuid) {  // Verificar si hay sede asociada
-          sedesGroup.sedes.push({
-            uuid: row.sede_uuid,
-            name: row.sede_name,
-            date_created: row.sede_date_created,
-            status: row.sede_status,
-            department_uuid: row.department_uuid,
-            location_uuid: row.location_uuid,
-            municipality_uuid: row.municipality_uuid,
-            state_uuid: row.state_uuid
-          });
+        if (row.sede_uuid) {
+          let sede = sedesGroup.sedes.find((s: any) => s.uuid === row.sede_uuid);
+          if (!sede) {
+            sede = {
+              uuid: row.sede_uuid,
+              name: row.sede_name,
+              based: row.sede_based,
+              date_created: row.sede_date_created,
+              status: row.sede_status,
+              department_uuid: row.department_uuid,
+              location_uuid: row.location_uuid,
+              municipality_uuid: row.municipality_uuid,
+              state_uuid: row.state_uuid,
+              teachers: []
+            };
+            sedesGroup.sedes.push(sede);
+          }
+
+          // Agregar el profesor a la sede si no existe
+          if (row.teacher_uuid) {
+            const existingTeacher = sede.teachers.find((t: any) => t.uuid === row.teacher_uuid);
+            if (!existingTeacher) {
+              sede.teachers.push({
+                uuid: row.teacher_uuid,
+                name: row.teacher_name
+              });
+            }
+          }
         }
       });
 
@@ -1103,11 +1023,6 @@ export class DatabaseService {
 
   // CRUD ZoneUsers
 
-  async loadZoneUsers() {
-    const zoneUsers = await this.db.query('SELECT * FROM zone_users;');
-    this.zoneUsers.set(zoneUsers.values || []);
-  }
-
   async addUserToZone(zoneUuid: string, userUuid: string) {
     const query = `
       INSERT INTO zone_users (zone_uuid, user_uuid)
@@ -1120,20 +1035,37 @@ export class DatabaseService {
 
   // CRUD ZoneSedesGroup
 
-  async loadZoneSedesGroups() {
-    const zoneSedesGroups = await this.db.query('SELECT * FROM zone_sedes_group;');
-    this.zoneSedesGroups.set(zoneSedesGroups.values || []);
+  async addSedesGroupToZone(zoneUuid: string, sedesGroupUuid: string) {
+    // Primero verifica si la combinación ya existe en la tabla
+    const checkQuery = `
+      SELECT 1 FROM zone_sedes_group
+      WHERE zone_uuid = ? AND sedes_group_uuid = ?;
+    `;
+
+    const insertQuery = `
+      INSERT INTO zone_sedes_group (zone_uuid, sedes_group_uuid)
+      VALUES (?, ?);
+    `;
+
+    try {
+      // Ejecuta el query de verificación
+      const checkResult = await this.db.query(checkQuery, [zoneUuid, sedesGroupUuid]);
+
+      // Si ya existe un registro con esa combinación, omite la inserción
+      if (checkResult && checkResult.values && checkResult.values.length > 0) {
+        console.log("La combinación ya existe en zone_sedes_group, no se insertará de nuevo.");
+        return null; // O devuelve un valor específico para indicar que no se insertó
+      }
+
+      // Si la combinación no existe, procede a insertarla
+      const result = await this.db.run(insertQuery, [zoneUuid, sedesGroupUuid]);
+      return result;
+    } catch (error) {
+      console.error('Error al insertar en zone_sedes_group:', error);
+      throw error; // Lanza el error para manejarlo donde se llame este método
+    }
   }
 
-  async addSedesGroupToZone(zoneUuid: string, sedesGroupUuid: string) {
-    const query = `
-      INSERT INTO zone_sedes_group (zone_uuid, sedes_group_uuid)
-      VALUES ('${zoneUuid}', '${sedesGroupUuid}');
-    `;
-    const result = await this.db.run(query);
-    // this.loadZoneSedesGroups();
-    return result;
-  }
 
   // CRUD Register
 
@@ -1143,17 +1075,19 @@ export class DatabaseService {
              a.uuid AS annex_uuid, a.name AS annex_name, a.description AS annex_description, a.file AS annex_file, a.date_created AS annex_date_created, a.is_synced AS annex_is_synced,
              e.uuid AS evidence_uuid, e.name AS evidence_name, e.description AS evidence_description, e.file AS evidence_file,
              e.date_created AS evidence_date_created, e.time_created AS evidence_time_created, e.latitude AS evidence_latitude, e.longitude AS evidence_longitude, e.is_synced AS evidence_is_synced,
-             s.name AS sede_name, r.signature_file,
-             ap.name AS approach_name, ac.name AS activity_name, sa.name AS subactivity_name
+             t.name AS teacher_name, r.signature_file,
+             ap.name AS approach_name, ac.name AS activity_name, sa.name AS subactivity_name,
+             s.name AS sede_name  -- Seleccionar el nombre de la sede
       FROM register r
       LEFT JOIN register_annex ra ON r.uuid = ra.register_uuid
       LEFT JOIN annex a ON ra.annex_uuid = a.uuid
       LEFT JOIN register_evidence re ON r.uuid = re.register_uuid
       LEFT JOIN evidence e ON re.evidence_uuid = e.uuid
-      LEFT JOIN sedes s ON r.sede_uuid = s.uuid
+      LEFT JOIN teacher t ON r.teacher_uuid = t.uuid
       LEFT JOIN approach ap ON r.approach_uuid = ap.uuid
       LEFT JOIN activity ac ON r.activity_uuid = ac.uuid
       LEFT JOIN subactivity sa ON r.subactivity_uuid = sa.uuid
+      LEFT JOIN sedes s ON r.sede_uuid = s.uuid  -- JOIN con sedes
       WHERE r.is_synced = 0
       ORDER BY r.uuid;
     `;
@@ -1179,12 +1113,14 @@ export class DatabaseService {
               activity_name: row.activity_name || null,
               subactivity_uuid: row.subactivity_uuid,
               subactivity_name: row.subactivity_name || null,
-              sede_uuid: row.sede_uuid,
-              sede: row.sede_name || null,
+              teacher_uuid: row.teacher_uuid,
+              teacher: row.teacher_name || null,
               user_uuid: row.user_uuid,
               is_synced: row.is_synced,
               sync_action: row.sync_action || null,
               status: row.status,
+              sede_uuid: row.sede_uuid,
+              sede_name: row.sede_name || null,  // Incluir el nombre de la sede
               annexList: [],
               evidenceList: [],
             });
@@ -1231,27 +1167,27 @@ export class DatabaseService {
     }
   }
 
-
-
   async getRegisterById(uuid: string): Promise<Register | null> {
     const query = `
       SELECT r.*,
              a.uuid AS annex_uuid, a.name AS annex_name, a.description AS annex_description, a.file AS annex_file,
              e.uuid AS evidence_uuid, e.name AS evidence_name, e.description AS evidence_description, e.file AS evidence_file,
-             s.name AS sede_name, r.signature_file
+             t.name AS teacher_name, r.signature_file,
+             s.name AS sede_name, s.based AS institution_radicado
       FROM register r
       LEFT JOIN register_annex ra ON r.uuid = ra.register_uuid
       LEFT JOIN annex a ON ra.annex_uuid = a.uuid
       LEFT JOIN register_evidence re ON r.uuid = re.register_uuid
       LEFT JOIN evidence e ON re.evidence_uuid = e.uuid
-      LEFT JOIN sedes s ON r.sede_uuid = s.uuid
+      LEFT JOIN teacher t ON r.teacher_uuid = t.uuid
+      LEFT JOIN sedes s ON r.sede_uuid = s.uuid  -- JOIN con la tabla de sedes
       WHERE r.uuid = ?
     `;
 
     try {
       const result = await this.db.query(query, [uuid]);
 
-      if (result && result.values && result?.values?.length > 0) {
+      if (result && result.values && result.values.length > 0) {
         const register = result.values[0];
 
         // Inicializar sets para controlar duplicados
@@ -1270,7 +1206,7 @@ export class DatabaseService {
               uuid: row.annex_uuid,
               name: row.annex_name,
               description: row.annex_description,
-              file: row.annex_file
+              file: row.annex_file,
             });
           }
 
@@ -1280,18 +1216,19 @@ export class DatabaseService {
               uuid: row.evidence_uuid,
               name: row.evidence_name,
               description: row.evidence_description,
-              file: row.evidence_file
+              file: row.evidence_file,
             });
           }
         });
 
-        // Retornar registro con anexos y evidencias únicos
+        // Retornar el registro con anexos, evidencias y datos adicionales
         return {
           ...register,
           annexList,
           evidenceList,
-          sede: register.sede_name || null,
-          signature_file: register.signature_file
+          teacher: register.teacher_name || null,
+          signature_file: register.signature_file,
+          sede: register.sede_name || null,  // Añadir la sede
         };
       }
 
@@ -1307,15 +1244,17 @@ export class DatabaseService {
       SELECT r.*,
              GROUP_CONCAT(DISTINCT a.name) AS annexes,
              GROUP_CONCAT(DISTINCT e.name) AS evidences,
-             s.name AS sede_name
+             t.name AS teacher_name,
+             s.name AS sede_name, s.based AS institution_radicado
       FROM register r
       LEFT JOIN register_annex ra ON r.uuid = ra.register_uuid
       LEFT JOIN annex a ON ra.annex_uuid = a.uuid
       LEFT JOIN register_evidence re ON r.uuid = re.register_uuid
       LEFT JOIN evidence e ON re.evidence_uuid = e.uuid
-      LEFT JOIN sedes s ON r.sede_uuid = s.uuid  -- Hacemos JOIN con la tabla de sedes
+      LEFT JOIN teacher t ON r.teacher_uuid = t.uuid  -- Relación con la tabla teacher
+      LEFT JOIN sedes s ON r.sede_uuid = s.uuid       -- Relación con la tabla sedes
       WHERE r.user_uuid = ?
-      GROUP BY r.uuid, s.name;
+      GROUP BY r.uuid, t.name, s.name, s.based;
     `;
 
     try {
@@ -1325,13 +1264,12 @@ export class DatabaseService {
       console.error('Error al obtener los registros por usuario:', error);
       return [];
     }
-}
-
+  }
 
   async addRegister(register: Partial<Register>) {
     const query = `
-      INSERT INTO register (uuid, name, date_created, signature_file, approach_uuid, activity_uuid, subactivity_uuid, sede_uuid, user_uuid, is_synced, sync_action, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+      INSERT INTO register (uuid, name, date_created, signature_file, approach_uuid, activity_uuid, subactivity_uuid, teacher_uuid, sede_uuid, user_uuid, is_synced, sync_action, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
     const values = [
       register.uuid,
@@ -1341,6 +1279,7 @@ export class DatabaseService {
       register.approach_uuid ?? null,   // Usa null si el valor es undefined
       register.activity_uuid ?? null,   // Usa null si el valor es undefined
       register.subactivity_uuid ?? null,  // Usa null si el valor es undefined
+      register.teacher_uuid ?? null,       // Usa null si el valor es undefined
       register.sede_uuid ?? null,       // Usa null si el valor es undefined
       register.user_uuid ?? null,       // Usa null si el valor es undefined
       register.is_synced ?? 0,          // Asegura que is_synced tenga un valor predeterminado
@@ -1363,6 +1302,7 @@ export class DatabaseService {
         approach_uuid = ?,
         activity_uuid = ?,
         subactivity_uuid = ?,
+        teacher_uuid = ?,
         sede_uuid = ?,
         user_uuid = ?,
         is_synced = ?,
@@ -1378,6 +1318,7 @@ export class DatabaseService {
       register.approach_uuid ?? null,   // Usa null si el valor es undefined
       register.activity_uuid ?? null,   // Usa null si el valor es undefined
       register.subactivity_uuid ?? null,  // Usa null si el valor es undefined
+      register.teacher_uuid ?? null,       // Usa null si el valor es undefined
       register.sede_uuid ?? null,       // Usa null si el valor es undefined
       register.user_uuid ?? null,       // Usa null si el valor es undefined
       register.is_synced ?? 0,          // Asegura que is_synced tenga un valor predeterminado
@@ -1390,29 +1331,7 @@ export class DatabaseService {
     return result;
   }
 
-
   // CRUD RegisterAnnex
-
-  async loadRegisterAnnexes() {
-    const registerAnnexes = await this.db.query('SELECT * FROM register_annex;');
-    this.registerAnnexes.set(registerAnnexes.values || []);
-  }
-
-  async getUnsyncRegisterAnnexes() {
-    const query = `
-      SELECT *
-      FROM register_annex
-      WHERE is_synced = 0;
-    `;
-
-    try {
-      const result = await this.db.query(query);
-      return result.values || [];
-    } catch (error) {
-      console.error('Error al obtener los anexos de registro no sincronizados:', error);
-      return [];
-    }
-  }
 
   async addAnnexToRegister(registerUuid: string, annexUuid: string, is_synced: number) {
     const query = `
@@ -1425,27 +1344,6 @@ export class DatabaseService {
 
   // CRUD RegisterEvidence
 
-  async loadRegisterEvidences() {
-    const registerEvidences = await this.db.query('SELECT * FROM register_evidence;');
-    this.registerEvidences.set(registerEvidences.values || []);
-  }
-
-  async getUnsyncRegisterEvidences() {
-    const query = `
-      SELECT *
-      FROM register_evidence
-      WHERE is_synced = 0;
-    `;
-
-    try {
-      const result = await this.db.query(query);
-      return result.values || [];
-    } catch (error) {
-      console.error('Error al obtener las evidencias de registro no sincronizadas:', error);
-      return [];
-    }
-  }
-
   async addEvidenceToRegister(registerUuid: string, evidenceUuid: string, is_synced: number) {
     const query = `
       INSERT INTO register_evidence (register_uuid, evidence_uuid, is_synced)
@@ -1456,16 +1354,48 @@ export class DatabaseService {
   }
 
   async resetDatabase() {
-    // Cerrar la conexión si está abierta
-    if (this.db) {
-      await this.db.close();
+    try {
+      // Desactivar restricciones de claves foráneas temporalmente
+      await this.db.execute('PRAGMA foreign_keys = OFF;');
+
+      // Ejecutar los comandos para eliminar todas las tablas
+      await this.db.execute(`
+        DROP TABLE IF EXISTS register_evidence;
+        DROP TABLE IF EXISTS register_annex;
+        DROP TABLE IF EXISTS register;
+        DROP TABLE IF EXISTS zone_sedes_group;
+        DROP TABLE IF EXISTS zone_users;
+        DROP TABLE IF EXISTS zone;
+        DROP TABLE IF EXISTS sedes_group_sede;
+        DROP TABLE IF EXISTS sedes_group;
+        DROP TABLE IF EXISTS sede_teacher;
+        DROP TABLE IF EXISTS sedes;
+        DROP TABLE IF EXISTS evidence;
+        DROP TABLE IF EXISTS annex;
+        DROP TABLE IF EXISTS teacher;
+        DROP TABLE IF EXISTS municipality;
+        DROP TABLE IF EXISTS location;
+        DROP TABLE IF EXISTS subactivity;
+        DROP TABLE IF EXISTS activity;
+        DROP TABLE IF EXISTS approach;
+        DROP TABLE IF EXISTS department;
+        DROP TABLE IF EXISTS state_parametric;
+        DROP TABLE IF EXISTS users;
+        DROP TABLE IF EXISTS user_settings;
+        DROP TABLE IF EXISTS sync_log;
+      `);
+
+      // Reactivar las restricciones de claves foráneas
+      await this.db.execute('PRAGMA foreign_keys = ON;');
+
+      // Llamar a la función para crear todas las tablas nuevamente
+      await this.createTables();
+
+      console.log('Base de datos restablecida correctamente');
+    } catch (error) {
+      console.error('Error al restablecer la base de datos:', error);
+      throw new Error('No se pudo restablecer la base de datos correctamente.');
     }
-
-    // Eliminar la base de datos
-    await this.db.delete();
-
-    // Inicializar nuevamente la base de datos
-    await this.initilizPlugin();
   }
 
   async isDbReady() {

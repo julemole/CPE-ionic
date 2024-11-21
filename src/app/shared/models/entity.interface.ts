@@ -35,6 +35,17 @@ export interface Parametric {
   status: number;       // NOT NULL
 }
 
+export interface Teacher {
+  uuid: string;
+  name: string;
+  document_type?: string;
+  document_number?: string;
+  mail?: string;
+  phone?: string;
+  state_uuid?: string;
+  status: number;
+}
+
 export interface Annex {
   uuid: string;         // NOT NULL
   server_uuid?: string;   // NULL
@@ -56,6 +67,7 @@ export interface Evidence {
   time_created?: string; // NULL
   latitude?: string;    // NULL
   longitude?: string;   // NULL
+  has_metadata?: number;  // NULL
   file?: string;         // NULL
   is_synced: number;    // NOT NULL
   sync_action?: string;   // NULL
@@ -74,6 +86,7 @@ export interface Sede {
   uuid: string;         // NOT NULL
   name: string;         // NOT NULL
   code_dane?: string;    // NULL
+  based?: string;       // NULL
   address?: string;     // NULL
   date_created?: string; // NULL
   department_uuid?: string; // NULL
@@ -124,6 +137,7 @@ export interface Register {
   approach_uuid?: string;  // NULL
   activity_uuid?: string;  // NULL
   subactivity_uuid?: string; // NULL
+  teacher_uuid?: string;      // NULL
   sede_uuid?: string;      // NULL
   user_uuid?: string;      // NULL
   annexList?: any[];    // NULL

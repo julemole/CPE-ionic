@@ -25,8 +25,7 @@ import { addIcons } from 'ionicons';
 import {
   personOutline,
   personCircleOutline,
-  logOutOutline,
-} from 'ionicons/icons';
+  logOutOutline, refreshOutline } from 'ionicons/icons';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
@@ -41,17 +40,9 @@ import { ConnectivityService } from 'src/app/shared/services/connectivity.servic
   imports: [
     IonProgressBar,
     IonButton,
-    IonInput,
     IonGrid,
     IonRow,
     IonCol,
-    IonLabel,
-    IonCard,
-    IonCardTitle,
-    IonCardHeader,
-    IonCardContent,
-    IonList,
-    IonItem,
     IonIcon,
     IonBackButton,
     IonButtons,
@@ -85,7 +76,7 @@ export class ProfilePage implements OnInit {
     private userService: UserService,
     private connectivityService: ConnectivityService,
   ) {
-    addIcons({ personCircleOutline, logOutOutline, personOutline });
+    addIcons({personCircleOutline,refreshOutline,logOutOutline,personOutline});
     this.isOnline = this.connectivityService.getNetworkStatus();
   }
 
@@ -109,7 +100,6 @@ export class ProfilePage implements OnInit {
       next: ([userInfo, zonesWithSedes]) => {
         this.userInfo = userInfo;
         this.zonesList = zonesWithSedes;
-        console.log(this.zonesList)
         const allOfficesGroups = this.zonesList.flatMap(
           (zone: any) => zone.officesGroups
         );
@@ -160,6 +150,9 @@ export class ProfilePage implements OnInit {
     this.username = this.userInfo.username;
     this.department = this.userInfo.field_department;
     this.isLoading = false;
-    // this.route = data.route;
+  }
+
+  goToChangePage(): void {
+    this.router.navigate(['/change-pass']);
   }
 }

@@ -22,10 +22,13 @@
     <ion-header>
       <ion-toolbar class="second-toolbar">
         <ion-title class="title"
-          >{{(institution?.attributes?.title || institution?.name || registerContent?.sede || 'No se encontró la institución') + ': (Docente nombre de ejemplo)'}}</ion-title
+          >{{(teacher?.attributes?.title || teacher?.name || registerContent?.teacher || registerContent?.teacher_name || 'No se encontró el docente')}}</ion-title
         >
       </ion-toolbar>
     </ion-header>
+    <ion-card-title class="ion-padding-horizontal ion-padding-top ion-text-center"
+      >{{(institutionName || registerContent?.institution || registerContent?.sede_name) + ' (' + (institutionBased || registerContent?.institution_radicado || '')  + ')' }}</ion-card-title
+    >
     <form [formGroup]="registerForm" class="form-container">
       <section class="ion-padding-horizontal ion-padding-top">
         <div class="ion-margin-bottom">
