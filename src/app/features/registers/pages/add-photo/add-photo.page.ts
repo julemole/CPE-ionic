@@ -22,7 +22,6 @@ import {
   IonButtons,
   IonBackButton,
   IonTextarea,
-  IonThumbnail,
   IonInput,
   IonButton,
   IonIcon, IonImg } from '@ionic/angular/standalone';
@@ -34,11 +33,12 @@ import { camera, cloudUpload, download } from 'ionicons/icons';
 import { PhotoData } from 'src/app/shared/models/save-in-session.interface';
 import { RegistersService } from '../../services/registers.service';
 import { ConnectivityService } from '../../../../shared/services/connectivity.service';
-import { blobToFile, loadSignatureFile } from 'src/app/shared/utils/functions';
-import { AlertController, LoadingController } from '@ionic/angular/standalone';
+import { blobToFile, getInfoFile, loadSignatureFile } from 'src/app/shared/utils/functions';
+import { AlertController, LoadingController, Platform } from '@ionic/angular/standalone';
 import { Browser } from '@capacitor/browser';
 import heic2any from 'heic2any';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
+import { FileOpener, FileOpenerOptions } from '@capacitor-community/file-opener';
 const piexif = require('piexifjs');
 
 @Component({
@@ -57,13 +57,14 @@ const piexif = require('piexifjs');
     IonToolbar,
     IonButtons,
     IonBackButton,
-    IonThumbnail,
     IonTextarea,
     CommonModule,
     ReactiveFormsModule,
   ],
 })
 export class AddPhotoPage implements OnInit {
+  tags:any;
+
   isOnline: WritableSignal<boolean> = signal(true);
   isLoading: boolean = false;
   loading: HTMLIonLoadingElement | null = null;
@@ -85,6 +86,7 @@ export class AddPhotoPage implements OnInit {
   idRegister: string = '';
   photoData: WritableSignal<PhotoData[]> = signal<PhotoData[]>([]);
   imageSrc: string | null = null;
+  evidenceLocalPath: string = '';
 
   //controles
   get name() {
@@ -99,6 +101,7 @@ export class AddPhotoPage implements OnInit {
     private readonly aRoute: ActivatedRoute,
     private readonly cameraService: CameraService,
     private readonly saveInSessionService: SaveInSessionService,
+    public platform: Platform,
     private alertController: AlertController,
     private loadingController: LoadingController,
     private registersService: RegistersService,
@@ -114,6 +117,7 @@ export class AddPhotoPage implements OnInit {
     this.photoId = this.aRoute.snapshot.params['idPhoto'];
     this.institutionId = this.aRoute.snapshot.params['idInstitution'];
     this.idRegister = this.aRoute.snapshot.params['idRegister'];
+
     if (this.photoId && !this.idRegister) {
       this.loadPhotoData();
     }
@@ -142,6 +146,7 @@ export class AddPhotoPage implements OnInit {
           },
           error: (error) => {
             this.isLoading = false;
+            this.alert(`Error al obtener la información de la evidencia: ${error.message || error.error?.message || error}`);
             console.error(error);
           },
         });
@@ -161,39 +166,9 @@ export class AddPhotoPage implements OnInit {
         const newBlob = await fetch(newImg).then(res => res.blob());
 
         const timestamp = new Date().toISOString().replace(/[-T:\.Z]/g, '').slice(0, 15); // Formato YYYYMMDD_HHMMSS
-        const fileName = `image_${timestamp}.jpg`;
+        const fileName = this.isOnline() ? 'orEv.jpg' : `image_${timestamp}.jpg`;
         // Convertir a archivo final
         let file = blobToFile(newBlob, fileName);
-
-        // const base64Image = await this.fileToBase64(file);
-        // const exifObj: any = {
-        //     '0th': {},
-        //     GPS: {},
-        //     Exif: {},
-        // };
-
-        // // Validar ubicación
-        // if (evidence.attributes.field_latitude && evidence.attributes.field_longitude) {
-        //   exifObj.GPS[piexif.GPSIFD.GPSLatitude] = piexif.GPSHelper.degToDmsRational(evidence.attributes.field_latitude);
-        //   exifObj.GPS[piexif.GPSIFD.GPSLatitudeRef] = evidence.attributes.field_latitude >= 0 ? 'N' : 'S';
-        //   exifObj.GPS[piexif.GPSIFD.GPSLongitude] = piexif.GPSHelper.degToDmsRational(evidence.attributes.field_longitude);
-        //   exifObj.GPS[piexif.GPSIFD.GPSLongitudeRef] = evidence.attributes.field_longitude >= 0 ? 'E' : 'W';
-        // }
-
-        // // Validar fecha y hora
-        // if (evidence.attributes.field_evidence_date && evidence.attributes.field_evidence_time) {
-        //   const dateTime = `${evidence.attributes.field_evidence_date.replace(/-/g, ':')} ${evidence.attributes.field_evidence_time}`;
-        //   exifObj.Exif[piexif.ExifIFD.DateTimeOriginal] = dateTime; // Fecha y hora de captura
-        //   exifObj["0th"][piexif.ImageIFD.DateTime] = dateTime; // Fecha y hora general
-        // }
-
-        // const exifBytes = piexif.dump(exifObj);
-        // const processedImage = piexif.insert(exifBytes, base64Image);
-
-        // // Convertir la imagen procesada a un archivo Blob y actualizar el estado
-        // const processedBlob = this.base64ToBlob(processedImage, 'image/jpeg');
-        // file = new File([processedBlob], file.name, { type: 'image/jpeg' });
-
         const objFile: any = { file, idFile: '' };
         const image = await this.registersService.uploadFileAndSaveId(file, csrf_token, 'evidence', objFile)
         objFile.idFile = image.id;
@@ -240,12 +215,14 @@ export class AddPhotoPage implements OnInit {
   async getOfflineEvidence() {
     try {
       const evidence = await this.registersService.getEvidenceByIdOffline(this.photoId);
+      console.log('evidenciaaaaaaaaaaaa', JSON.stringify(evidence))
       if(evidence) {
         this.photoForm.patchValue({
           name: evidence.name,
           description: evidence.description,
         });
         this.photoForm.disable();
+        this.evidenceLocalPath = evidence.file!;
         this.imageSrc = await loadSignatureFile(evidence.file!);
       }
     } catch (error) {
@@ -253,23 +230,29 @@ export class AddPhotoPage implements OnInit {
     }
   }
 
-  async downloadWithBrowser() {
-    if(!this.isOnline()){
-      await this.alert('No se puede descargar la imagen sin conexión a internet.');
-      return;
-    }
-    try {
+  async openFile() {
+    if(this.platform.is('hybrid') && !this.isOnline()){
+      try {
+        const infoFile = await getInfoFile(this.evidenceLocalPath);
+
+        const fileOpenerOptions: FileOpenerOptions = {
+          filePath: this.evidenceLocalPath,
+          contentType:  infoFile.mimeType,
+          openWithDefault: true,
+        };
+        await FileOpener.open(fileOpenerOptions);
+      } catch (error: any) {
+        console.error(`Error al abrir el archivo: ${error.message || error.error?.message || error}`);
+      }
+    } else {
       await Browser.open({ url: this.imageSrc! });
-    } catch (error) {
-      throw new Error('No se pudo abrir el navegador para descargar la imagen.');
     }
   }
 
   async captureImage() {
     try {
       await this.showLoading();
-
-      const locationData = await this.cameraService.takePictureAndGetData();
+      const locationData = await this.cameraService.takePictureAndGetData(this.isOnline());
 
       if (!locationData) {
         throw new Error('Imagen no capturada.');
@@ -294,41 +277,50 @@ export class AddPhotoPage implements OnInit {
       });
     } catch (error: any) {
       console.error('Error en la captura de imagen:', error);
-      await this.alert(error.message || 'Ocurrió un error al capturar la imagen.');
-      // Puedes mostrar un mensaje al usuario si es necesario
+      await this.alert(`Error en la captura de imagen: ${error.message || 'Ocurrió un error al capturar la imagen.'}`);
     } finally {
       await this.hideLoading(); // Ocultar el loader pase lo que pase
     }
   }
 
   async onFileSelected(event: any) {
-    const input = event.target as HTMLInputElement;
+    let input = event.target as HTMLInputElement;
     if (!input.files || !input.files[0]) return;
 
-    let file: File = input.files[0];
+    let file: File | null = input.files[0];
 
     // Comprobar el tipo de archivo y permitir solo tipos de imagen
     const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic'];
     if (!allowedImageTypes.includes(file.type)) {
-        await this.alert('Por favor, selecciona solo archivos de imagen (JPG, PNG, GIF, WEBP o HEIC).');
-        return;
+      await this.alert('Por favor, selecciona solo archivos de imagen (JPG, PNG, GIF, WEBP o HEIC).');
+      input.value = '';
+      file = null;
+      return;
     }
 
     // Validar el tamaño del archivo
     const maxSizeInMB = 10;
     const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
     if (file.size > maxSizeInBytes) {
-        await this.alert('El archivo no debe pesar más de 10MB.');
-        return;
+      await this.alert('El archivo no debe pesar más de 10MB.');
+      input.value = '';
+      file = null;
+      return;
     }
 
     try {
-      await this.showLoading();
-
       // Convertir el archivo HEIC a JPEG si es necesario para renderizar
       if (file.type === 'image/heic') {
         const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg' });
-        file = new File([convertedBlob as Blob], file.name.replace(/\.heic$/, '.jpeg'), { type: 'image/jpeg' });
+        file = new File([convertedBlob as Blob], 'ev.jpeg', { type: 'image/jpeg' });
+      }
+
+      if (file) {
+        // Modificar el nombre del archivo
+        const fileExtension = file.name.split('.').pop();
+        const timestamp = new Date().getTime();
+        const newFileName = this.isOnline() ? `ev.${fileExtension}` : `ev${timestamp}.${fileExtension}`;
+        file = new File([file], newFileName, { type: file.type });
       }
 
       this.originalFile = file;
@@ -339,6 +331,10 @@ export class AddPhotoPage implements OnInit {
       if (!locationData) {
         throw new Error('No se pudieron obtener los datos de ubicación.');
       }
+
+      this.tags = locationData.tags;
+
+      await this.showLoading();
 
       this.photoForm.patchValue({
           date: locationData.date,
@@ -364,40 +360,15 @@ export class AddPhotoPage implements OnInit {
         throw new Error('No se pudo obtener el blob de la imagen procesada.');
       }
 
-      file = new File([blobWithText], file.name, { type: 'image/jpeg' });
+      const timestamp = new Date().getTime();
+      const filename = this.isOnline() ? 'ev.jpeg' : `ev${timestamp}.jpeg`;
 
-      const base64Image = await this.fileToBase64(file);
-      const exifObj: any = {
-          '0th': {},
-          GPS: {},
-          Exif: {},
-      };
-
-      // Validar ubicación
-      if (locationData.latitude && locationData.longitude) {
-        exifObj.GPS[piexif.GPSIFD.GPSLatitude] = piexif.GPSHelper.degToDmsRational(locationData.latitude);
-        exifObj.GPS[piexif.GPSIFD.GPSLatitudeRef] = locationData.latitude >= 0 ? 'N' : 'S';
-        exifObj.GPS[piexif.GPSIFD.GPSLongitude] = piexif.GPSHelper.degToDmsRational(locationData.longitude);
-        exifObj.GPS[piexif.GPSIFD.GPSLongitudeRef] = locationData.longitude >= 0 ? 'E' : 'W';
-      }
-
-      // Validar fecha y hora
-      if (locationData.date && locationData.time) {
-        const dateTime = `${locationData.date.replace(/-/g, ':')} ${locationData.time}`;
-        exifObj.Exif[piexif.ExifIFD.DateTimeOriginal] = dateTime; // Fecha y hora de captura
-        exifObj["0th"][piexif.ImageIFD.DateTime] = dateTime; // Fecha y hora general
-      }
-
-      const exifBytes = piexif.dump(exifObj);
-      const processedImage = piexif.insert(exifBytes, base64Image);
-
-      // Convertir la imagen procesada a un archivo Blob y actualizar el estado
-      const processedBlob = this.base64ToBlob(processedImage, 'image/jpeg');
-      console.log("processedblob", JSON.stringify(processedBlob))
-      file = new File([processedBlob], file.name, { type: 'image/jpeg' });
+      file = new File([blobWithText], filename, { type: 'image/jpeg' });
 
       if (file.size > maxSizeInBytes) {
         await this.alert('El archivo no debe pesar más de 10MB.');
+        input.value = '';
+        file = null;
         return;
       }
 
@@ -407,121 +378,14 @@ export class AddPhotoPage implements OnInit {
 
     } catch (error: any) {
         console.error('Error al procesar la imagen:', error);
+        input.value = '';
+        file = null;
         this.clearImage();
         await this.alert(`Ocurrió un error al procesar la imagen. Intenta nuevamente. ${error.message || error?.error?.message || error }`);
     } finally {
         await this.hideLoading();
     }
   }
-
-  async photo(event: any) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || !input.files[0]) return;
-
-    let file: File = input.files[0];
-
-    // Comprobar el tipo de archivo y permitir solo tipos de imagen
-    const allowedImageTypes = ['image/jpeg'];
-    if (!allowedImageTypes.includes(file.type)) {
-        await this.alert('Por favor, selecciona solo archivos de imagen (JPG).');
-        return;
-    }
-
-    // Validar el tamaño del archivo
-    const maxSizeInMB = 10;
-    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
-    if (file.size > maxSizeInBytes) {
-        await this.alert('El archivo no debe pesar más de 10MB.');
-        return;
-    }
-
-    try {
-        // Mostrar el loader
-        await this.showLoading();
-
-        // Obtener los metadatos de ubicación y fecha
-        const fileUrl = URL.createObjectURL(file);
-        const locationData = await this.cameraService.getLocationForImage(fileUrl);
-
-        // Actualizar el formulario con los datos de ubicación y fecha
-        this.photoForm.patchValue({
-            date: locationData.date,
-            time: locationData.time,
-            latitude: locationData.latitude,
-            longitude: locationData.longitude,
-        });
-
-        // Convertir el archivo a Base64
-        const base64Image = await this.fileToBase64(file);
-
-        // Crear los metadatos EXIF
-        const exifObj: any = {
-            '0th': {},
-            GPS: {},
-            Exif: {},
-        };
-
-        // Agregar coordenadas GPS
-        if (locationData.latitude && locationData.longitude) {
-            exifObj.GPS[piexif.GPSIFD.GPSLatitude] = this.convertToDMS(locationData.latitude);
-            exifObj.GPS[piexif.GPSIFD.GPSLatitudeRef] = locationData.latitude >= 0 ? 'N' : 'S';
-            exifObj.GPS[piexif.GPSIFD.GPSLongitude] = this.convertToDMS(locationData.longitude);
-            exifObj.GPS[piexif.GPSIFD.GPSLongitudeRef] = locationData.longitude >= 0 ? 'E' : 'W';
-        }
-
-        // Agregar fecha y hora
-        const dateTime = `${locationData.date.replace(/-/g, ':')} ${locationData.time}`;
-        exifObj['0th'][piexif.ImageIFD.DateTime] = dateTime;
-
-        // Generar los bytes EXIF
-        const exifBytes = piexif.dump(exifObj);
-
-        // Insertar los metadatos EXIF en la imagen
-        const processedImage = piexif.insert(exifBytes, base64Image);
-
-        // Convertir la imagen procesada a un archivo Blob y actualizar el estado
-        const processedBlob = this.base64ToBlob(processedImage, 'image/jpeg');
-        file = new File([processedBlob], file.name, { type: 'image/jpeg' });
-
-        this.file = file;
-        this.imageSrc = URL.createObjectURL(file);
-
-    } catch (error: any) {
-        console.error('Error al procesar la imagen:', error);
-        this.clearImage();
-        await this.alert(`Ocurrió un error al procesar la imagen: ${error.message || error}`);
-    } finally {
-        await this.hideLoading();
-    }
-  }
-
-  private fileToBase64(file: File): Promise<string> {
-      return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = (error) => reject(error);
-          reader.readAsDataURL(file);
-      });
-  }
-
-  private base64ToBlob(base64: string, mimeType: string): Blob {
-      const byteString = atob(base64.split(',')[1]);
-      const arrayBuffer = new ArrayBuffer(byteString.length);
-      const uint8Array = new Uint8Array(arrayBuffer);
-      for (let i = 0; i < byteString.length; i++) {
-          uint8Array[i] = byteString.charCodeAt(i);
-      }
-      return new Blob([arrayBuffer], { type: mimeType });
-  }
-
-  private convertToDMS(degree: number): number[][] {
-      const absDegree = Math.abs(degree);
-      const d = Math.floor(absDegree);
-      const m = Math.floor((absDegree - d) * 60);
-      const s = (absDegree - d - m / 60) * 3600;
-      return [[d, 1], [m, 1], [Math.round(s * 100), 100]];
-  }
-
 
   // Método para limpiar la imagen y los campos asociados
   clearImage() {

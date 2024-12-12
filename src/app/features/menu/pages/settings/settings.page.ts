@@ -4,7 +4,7 @@ import { IonContent, IonHeader, IonTitle, IonToolbar, IonBackButton, IonButtons,
 import { DatabaseService } from 'src/app/shared/services/database.service';
 import { ConnectivityService } from '../../../../shared/services/connectivity.service';
 import { addIcons } from 'ionicons';
-import { wifiOutline, syncOutline } from 'ionicons/icons';
+import { wifiOutline, syncOutline, settingsOutline } from 'ionicons/icons';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { Router } from '@angular/router';
 
@@ -26,7 +26,7 @@ export class SettingsPage {
   constructor(private dbService: DatabaseService, private ConnectivityService: ConnectivityService, private alertController: AlertController,
     private localSS: LocalStorageService, private loadingController: LoadingController, private router: Router
   ) {
-    addIcons({syncOutline,wifiOutline});
+    addIcons({settingsOutline,wifiOutline,syncOutline});
     this.isOnline = this.ConnectivityService.getNetworkStatus();
     this.statusSync();
   }

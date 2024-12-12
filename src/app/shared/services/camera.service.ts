@@ -1,6 +1,7 @@
 // src/app/services/camera.service.ts
 import { Injectable } from '@angular/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { AlertController, Platform } from '@ionic/angular/standalone';
 import { Geolocation } from '@capacitor/geolocation';
 import * as ExifReader from 'exifreader';
 import { blobToFile } from 'src/app/shared/utils/functions';
@@ -10,7 +11,9 @@ import { blobToFile } from 'src/app/shared/utils/functions';
 })
 export class CameraService {
 
-  async takePictureScan(): Promise<{ imagePath: string, file: File }> {
+  constructor(private alertController: AlertController, private platform: Platform) {}
+
+  async takePictureScan(isOnline: boolean = true): Promise<{ imagePath: string, file: File }> {
     try {
       const image = await Camera.getPhoto({
         resultType: CameraResultType.Uri,
@@ -27,7 +30,7 @@ export class CameraService {
       const response = await fetch(imagePath);
       const blob = await response.blob();
       const timestamp = new Date().getTime();
-      const fileName = `image_${timestamp}.jpg`;
+      const fileName = isOnline ? `ann.jpg` : `ann${timestamp}.jpg`;
       const file = blobToFile(blob, fileName);
 
       return { imagePath, file };
@@ -41,53 +44,85 @@ export class CameraService {
     * Tomar una foto y obtener la información de la misma
     * @returns Objeto con la URL de la imagen, el archivo, la latitud, longitud, fecha y hora de la imagen
   */
-  async takePictureAndGetData(): Promise<{ imagePath: string, file: File, latitude: number | null, longitude: number | null, date: string, time: string }> {
-    const image = await Camera.getPhoto({
-      resultType: CameraResultType.Uri,
-      source: CameraSource.Camera,
-      quality: 80,
-      saveToGallery: true, // Desactiva el guardado automático
-    });
-
-    const imagePath = image.webPath!;
-    const response = await fetch(imagePath);
-    const blob = await response.blob();
-
-    // Obtener datos de ubicación, fecha y hora
-    let latitude: number | null = null;
-    let longitude: number | null = null;
-    let date: string;
-    let time: string;
-
+  async takePictureAndGetData(isOnline: boolean = true): Promise<{
+    imagePath: string,
+    file: File,
+    latitude: number | null,
+    longitude: number | null,
+    date: string,
+    time: string
+  }> {
     try {
-      const position = await Geolocation.getCurrentPosition();
-      latitude = position.coords.latitude;
-      longitude = position.coords.longitude;
+      // Capturar imagen usando la cámara
+      const image = await Camera.getPhoto({
+        resultType: CameraResultType.Uri,
+        source: CameraSource.Camera,
+        quality: 80,
+        saveToGallery: true, // Guardar imagen en galería
+      });
 
-      const timestamp = new Date(position.timestamp);
-      date = timestamp.toLocaleDateString();
-      time = timestamp.toLocaleTimeString();
-    } catch (error) {
-      console.error('Error obteniendo la geolocalización', error);
-      const now = new Date();
-      date = now.toLocaleDateString();
-      time = now.toLocaleTimeString();
+      if (!image.webPath) {
+        throw new Error('No se pudo obtener la imagen de la cámara.');
+      }
+
+      const imagePath = image.webPath;
+      const response = await fetch(imagePath);
+      const blob = await response.blob();
+
+      // Inicializar variables de ubicación, fecha y hora
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+      let date: string;
+      let time: string;
+
+      try {
+        // Obtener permisos y geolocalización
+        if (this.platform.is('hybrid')) {
+          const hasPermission = await Geolocation.requestPermissions();
+          if (hasPermission.location !== 'granted') {
+            throw new Error('Permiso de ubicación denegado, por favor habilítalo en la configuración de tu dispositivo.');
+          }
+        }
+
+        const position = await Geolocation.getCurrentPosition();
+        latitude = position.coords.latitude;
+        longitude = position.coords.longitude;
+
+        const timestamp = new Date(position.timestamp);
+        date = timestamp.toLocaleDateString();
+        time = timestamp.toLocaleTimeString();
+
+      } catch (geoError) {
+        console.error('Error obteniendo la geolocalización:', geoError);
+        const now = new Date();
+        date = now.toLocaleDateString();
+        time = now.toLocaleTimeString();
+
+        // Lanza el error para manejarlo en el flujo principal
+        throw new Error('No se pudo obtener la ubicación. Se usará la fecha y hora actual.');
+      }
+
+      // Procesar la imagen para agregar texto (datos de ubicación y fecha/hora)
+      const processedImage = await this.addTextToImage(blob, latitude, longitude, date, time);
+      const processedBlob = await fetch(processedImage).then(res => res.blob());
+
+      // Generar un nombre automático para el archivo
+      const timestamp = new Date().toISOString().replace(/[-T:\.Z]/g, '').slice(0, 15); // Formato YYYYMMDD_HHMMSS
+      let fileName = '';
+      if(isOnline){
+        fileName = 'ev.jpg';
+      } else {
+        fileName = `ev${timestamp}.jpg`
+      }
+
+      // Convertir a archivo final
+      const file = blobToFile(processedBlob, fileName);
+
+      return { imagePath: processedImage, file, latitude, longitude, date, time };
+
+    } catch (error: any) {
+      throw new Error(`No se pudo completar la operación: ${error.message || error}`);
     }
-
-    // Procesar la imagen para agregar información
-    const processedImage = await this.addTextToImage(blob, latitude, longitude, date, time);
-    const processedBlob = await fetch(processedImage).then(res => res.blob());
-
-    // Generar nombre automático para el archivo
-    const timestamp = new Date().toISOString().replace(/[-T:\.Z]/g, '').slice(0, 15); // Formato YYYYMMDD_HHMMSS
-    const fileName = `image_${timestamp}.jpg`;
-
-    // Guardar imagen en la galería
-    // await this.saveImageToGallery(processedImage, fileName);
-
-    // Convertir a archivo final
-    const file = blobToFile(processedBlob, fileName);
-    return { imagePath: processedImage, file, latitude, longitude, date, time };
   }
 
   async addTextToImage(
@@ -122,15 +157,15 @@ export class CameraService {
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
           // Configurar el tamaño dinámico del texto
-          const baseFontSize = 0.025; // Proporción del tamaño de la fuente basada en el alto de la imagen
+          const baseFontSize = 0.015; // Proporción del tamaño de la fuente basada en el alto de la imagen
           const fontSize = Math.round(canvas.height * baseFontSize);
-          const lineHeight = fontSize * 1.2; // Altura entre líneas
-          ctx.font = `${fontSize}px Arial`; // Tamaño dinámico de la fuente
+          const lineHeight = fontSize * 1.1; // Altura entre líneas
+          ctx.font = `bold ${fontSize}px Arial`; // Tamaño dinámico de la fuente
           ctx.fillStyle = 'white'; // Letra blanca
           ctx.textBaseline = 'top'; // Alinear en la parte superior
 
           // Configurar el contenedor negro con opacidad
-          const padding = fontSize * 0.5; // Padding proporcional al tamaño de la fuente
+          const padding = fontSize * 0.3; // Padding proporcional al tamaño de la fuente
           const maxWidth = canvas.width * 0.9; // Máximo ancho del contenedor (90% del ancho de la imagen)
           let currentY = padding; // Coordenada Y inicial
           let rectHeight = 0;
@@ -147,7 +182,7 @@ export class CameraService {
           rectHeight = lines.length * lineHeight + padding * 2;
 
           // Dibujar el fondo negro con opacidad
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
           ctx.fillRect(
             canvas.width - maxWidth - padding,
             padding,
@@ -174,16 +209,6 @@ export class CameraService {
     });
   }
 
-
-  // private async saveImageToGallery(imageBase64: string, fileName: string): Promise<void> {
-  //   await Filesystem.writeFile({
-  //     path: `DCIM/Camera/${fileName}`, // Guardar en la carpeta de la cámara
-  //     data: imageBase64.split(',')[1], // Quitar la cabecera base64
-  //     directory: Directory.External,
-  //     recursive: true,
-  //   });
-  // }
-
   private async getAddressFromCoordinates(latitude: number, longitude: number): Promise<string> {
     const apiKey = '295731c1b4ac4ea68be015c89be0e96a';
     const response = await fetch(
@@ -209,6 +234,8 @@ export class CameraService {
       const file = await fetch(imageSrc).then(r => r.blob());
       const tags: any = ExifReader.load(await file.arrayBuffer());
 
+      console.log(JSON.stringify(tags, null, 2));
+
       let latitude = null;
       let longitude = null;
       let date = null;
@@ -220,7 +247,12 @@ export class CameraService {
         longitude = this.convertDMSToDD(tags.GPSLongitude.description, tags.GPSLongitudeRef.description);
       }
 
-      if (tags.DateTime) {
+      if (tags.DateTimeOriginal) {
+        const timestamp = tags.DateTimeOriginal.description;
+        const [datePart, timePart] = timestamp.split(' ');
+        date = datePart.split(':').join('-');
+        time = timePart;
+      } else if (tags.DateTime) {
         const timestamp = tags.DateTime.description;
         const [datePart, timePart] = timestamp.split(' ');
         date = datePart.split(':').join('-');
@@ -229,7 +261,27 @@ export class CameraService {
 
       // Si faltan datos de ubicación, intentar obtener la ubicación actual
       if (!latitude || !longitude || !date || !time) {
-        const fallbackLocation = await this.getCurrentLocation();
+        const confirmed = await this.warningAlert(
+          'Advertencia',
+          'No se encontraron datos de ubicación en la imagen. ¿Deseas usar tu ubicación actual?',
+          [
+            {
+              text: 'Aceptar',
+              handler: () => true,
+            },
+            {
+              text: 'Cancelar',
+              role: 'cancel',
+              handler: () => false,
+            }
+          ]
+      );
+
+      if (!confirmed) {
+        throw new Error('El usuario canceló el proceso al no aceptar usar la ubicación actual.');
+      }
+
+      const fallbackLocation = await this.getCurrentLocation();
         latitude = latitude || fallbackLocation.latitude;
         longitude = longitude || fallbackLocation.longitude;
         date = date || fallbackLocation.date;
@@ -240,10 +292,28 @@ export class CameraService {
 
     } catch (error) {
       console.error('Error obteniendo los metadatos EXIF o la geolocalización', error);
-      // Lanzar el error para que sea manejado en onFileSelected
       throw error;
     }
   }
+
+  async warningAlert(header: string, message: string, buttons: any[]): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header,
+        cssClass: 'warning-alert',
+        message,
+        buttons: buttons.map((button) => ({
+            ...button,
+            handler: () => {
+              if (button.handler) button.handler();
+              resolve(button.role !== 'cancel');
+            }
+        }))
+      });
+      await alert.present();
+    });
+  }
+
 
   /**
    * Obtener la ubicación actual
@@ -252,9 +322,11 @@ export class CameraService {
   async getCurrentLocation(): Promise<{ latitude: number | null, longitude: number | null, date: string, time: string }> {
     try {
       // Verificar si el usuario otorgó permiso para la geolocalización
-      const hasPermission = await Geolocation.requestPermissions();
-      if (hasPermission.location !== 'granted') {
-        throw new Error('Permiso de ubicación denegado');
+      if(this.platform.is('hybrid')) {
+        const hasPermission = await Geolocation.requestPermissions();
+        if (hasPermission.location !== 'granted') {
+          throw new Error('Permiso de ubicación denegado, por favor habilítalo en la configuración de tu dispositivo.');
+        }
       }
 
       const position = await Geolocation.getCurrentPosition();

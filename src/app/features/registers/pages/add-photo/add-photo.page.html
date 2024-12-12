@@ -20,17 +20,19 @@
 <ion-content [fullscreen]="true">
   @if(!isLoading){
     <section class="ion-margin">
-      <div class="container-img">
-        @if(imageSrc && !photoId) {
+      @if(imageSrc) {
+        <ion-img [src]="imageSrc" alt="Foto evidencia"></ion-img>
+      }
+      @if(!photoId){
+        <div class="container-img">
+        <!-- @if(imageSrc && !photoId) {
         <ion-thumbnail slot="start" class="img">
           <ion-img [src]="imageSrc" alt="Foto evidencia"></ion-img>
         </ion-thumbnail>
-        }
-        @if(imageSrc && photoId) {
-          <ion-img [src]="imageSrc" alt="Foto evidencia"></ion-img>
-        }
-        @if(!photoId){
-          <div class="container-btns" [class.flex-column]="imageSrc">
+        } -->
+        <!-- @if(imageSrc && photoId) { -->
+          <!-- <div class="container-btns" [class.flex-column]="imageSrc"> -->
+          <div class="container-btns">
             <div class="file-button">
               <ion-button expand="block" [disabled]="photoId">
                 <ion-icon slot="start" name="cloud-upload"></ion-icon>
@@ -53,11 +55,11 @@
               Tomar foto
             </ion-button>
           </div>
-        }
-      </div>
-      @if(imageSrc && photoId) {
-        <div class="ion-text-center">
-          <ion-button (click)="downloadWithBrowser()">
+        </div>
+      }
+      @if(imageSrc && photoId && idRegister) {
+        <div class="ion-text-center ion-margin">
+          <ion-button (click)="openFile()">
             <ion-icon slot="start" name="download"></ion-icon>
             Descargar
           </ion-button>
@@ -117,5 +119,7 @@
         }
       </form>
     </section>
+
+    <span>{{tags | json}}</span>
   }
 </ion-content>

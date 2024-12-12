@@ -192,7 +192,16 @@ export class AppComponent {
   private async convertLocalFileToFile(filePath: string): Promise<File> {
     const fileInfo = await getInfoFile(filePath);
     const blob = base64ToBlob(fileInfo.file, fileInfo.mimeType);
-    return blobToFile(blob, fileInfo.name);
+
+    // Extraer el nombre y la extensión
+    const nameParts = fileInfo.name.split('.');
+    const name = nameParts[0].substring(0, 3); // Acortar a las primeras 3 letras
+    const extension = nameParts.length > 1 ? `.${nameParts.pop()}` : '';
+
+    // Reconstruir el nombre del archivo
+    const shortName = `${name}${extension}`;
+
+    return blobToFile(blob, shortName);
   }
 
   private async convertLocalEvidenceFiles(evidenceList: any[]): Promise<PhotoData[]> {

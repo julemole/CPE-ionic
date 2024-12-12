@@ -70,7 +70,6 @@ export class SelectInstitutionPage implements OnInit {
   }
 
   async ngOnInit() {
-    this.saveInSessionService.cleanAllData();
     const idUser = this.localStorageSv.getItem('USER_ID');
     if (idUser) {
       if(this.isOnline()){
@@ -83,6 +82,7 @@ export class SelectInstitutionPage implements OnInit {
   }
 
   navigateWithState(teacherId: any, institution: string, institutionBased: string, id: string) {
+    this.saveInSessionService.cleanAllData();
     const currentUrl = this.router.url;
     if (teacherId && institution) {
       this.router.navigate([`${currentUrl}/${teacherId}`], { state: { institution, institutionBased, id } });

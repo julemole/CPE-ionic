@@ -1254,7 +1254,8 @@ export class DatabaseService {
       LEFT JOIN teacher t ON r.teacher_uuid = t.uuid  -- Relación con la tabla teacher
       LEFT JOIN sedes s ON r.sede_uuid = s.uuid       -- Relación con la tabla sedes
       WHERE r.user_uuid = ?
-      GROUP BY r.uuid, t.name, s.name, s.based;
+      GROUP BY r.uuid, t.name, s.name, s.based
+      ORDER BY r.date_created DESC;
     `;
 
     try {

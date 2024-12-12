@@ -88,7 +88,6 @@ export class MainRegisterPage implements OnInit {
   isLoading: boolean = false;
 
   idInstitution: string = '';
-  origIdInstitution: string = '';
   idRegister: string = '';
 
   registerContent: any;

@@ -42,8 +42,8 @@
       @if(loadFileSrc) {
         <ion-item>
           <ion-label class="bk-text">Anexo cargado:</ion-label>
-          @if(annexLocalPath){
-            <a (click)="openFile()" target="_blank" style="text-decoration: underline;">Ver anexo</a>
+          @if(idRegister){
+            <a (click)="openFile()" style="text-decoration: underline;">Ver anexo</a>
           } @else {
             @if(fileType === 'image'){
               <a (click)="openPreview()" style="text-decoration: underline;">Ver anexo</a>

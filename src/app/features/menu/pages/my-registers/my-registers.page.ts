@@ -105,13 +105,6 @@ export class MyRegistersPage implements OnInit {
       this.myRegisters = await this.registersService.getRegistersByUserOffline(
         idUser
       );
-      this.myRegisters.forEach(group => {
-        group.registros.sort((a: any, b: any) => {
-          const dateA = new Date(a.date_created).getTime();
-          const dateB = new Date(b.date_created).getTime();
-          return dateB - dateA;
-        });
-      });
     } catch (error) {
       throw new Error('Error al obtener los registros');
     }

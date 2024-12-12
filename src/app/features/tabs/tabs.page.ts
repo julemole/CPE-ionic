@@ -92,8 +92,8 @@ export class TabsPage {
     const user_id = this.localSS.getItem('USER_ID');
     const signaturebase64 = this.signature();
     const signatureBlob = base64ToBlob(signaturebase64, 'image/png');
-    const timestamp = Date.now();
-    const uniqueFileName = `signature_${timestamp}.png`;
+    const timestamp = new Date().getTime();
+    const uniqueFileName = this.isOnline() ? `sign.png` : `sign${timestamp}.png`;
     const signatureFile = blobToFile(signatureBlob, uniqueFileName);
 
     let signature = {
@@ -253,17 +253,6 @@ export class TabsPage {
     signature: any,
     csrf: string
   ) {
-    const evidencePromises = evidences.map(
-      (evidence) =>
-        evidence.file &&
-        this.registersService.uploadFileAndSaveId(
-          evidence.file,
-          csrf,
-          'evidence',
-          evidence
-        )
-    );
-
     const originalEvidencePromises = evidences.map(
       (evidence) =>
         evidence.originalFile &&
@@ -274,6 +263,17 @@ export class TabsPage {
           evidence
         )
     )
+
+    const evidencePromises = evidences.map(
+      (evidence) =>
+        evidence.file &&
+        this.registersService.uploadFileAndSaveId(
+          evidence.file,
+          csrf,
+          'evidence',
+          evidence
+        )
+    );
 
     const annexPromises = annexes.map(
       (annex) =>
@@ -295,8 +295,8 @@ export class TabsPage {
     try {
       // Intentamos cargar todos los archivos
       const results = await Promise.all([
-        ...evidencePromises,
         ...originalEvidencePromises,
+        ...evidencePromises,
         ...annexPromises,
         signaturePromise,
       ]);

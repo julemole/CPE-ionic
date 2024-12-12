@@ -44,6 +44,7 @@ import { CameraService } from 'src/app/shared/services/camera.service';
 import { AlertController, Platform, LoadingController } from '@ionic/angular/standalone';
 import { FileOpener, FileOpenerOptions } from '@capacitor-community/file-opener';
 import { DomSanitizer } from '@angular/platform-browser';
+import { Browser } from '@capacitor/browser';
 
 
 @Component({
@@ -99,7 +100,6 @@ export class AddAttachedPage implements OnInit {
 
   constructor(
     private aRoute: ActivatedRoute,
-    private sanitizer: DomSanitizer,
     private saveInSessionService: SaveInSessionService,
     private registersService: RegistersService,
     private connectivityService: ConnectivityService,
@@ -117,7 +117,7 @@ export class AddAttachedPage implements OnInit {
     this.attachId = this.aRoute.snapshot.params['attachId'];
     this.institutionId = this.aRoute.snapshot.params['idInstitution'];
     this.idRegister = this.aRoute.snapshot.params['idRegister'];
-    if (this.attachId) {
+    if (this.attachId && !this.idRegister) {
       this.loadAttachedData();
     } else {
       this.scanImgSrc = '';
@@ -125,8 +125,7 @@ export class AddAttachedPage implements OnInit {
 
     if (this.idRegister && this.attachId) {
       this.scanImgSrc = '';
-      // if(this.isOnline()){
-      if(!this.platform.is('hybrid')){
+      if(this.isOnline()){
         this.isLoading = true;
         this.scanImgSrc = '';
         this.registersService.getAnnexById(this.attachId).subscribe({
@@ -151,9 +150,15 @@ export class AddAttachedPage implements OnInit {
     }
   }
 
+  viewAnnex() {
+    console.log(this.loadFileSrc)
+    Browser.open({ url: this.loadFileSrc });
+  }
+
   async getOfflineAnnex() {
     try {
       const annex = await this.registersService.getAnnexByIdOffline(this.attachId);
+      console.log('anexoooooooooo', JSON.stringify(annex))
       if (annex) {
         this.attachedForm.patchValue({
           name: annex.name,
@@ -170,17 +175,21 @@ export class AddAttachedPage implements OnInit {
   }
 
   async openFile() {
-    try {
-      const infoFile = await getInfoFile(this.annexLocalPath);
+    if(this.platform.is('hybrid') && !this.isOnline()){
+      try {
+        const infoFile = await getInfoFile(this.annexLocalPath);
 
-      const fileOpenerOptions: FileOpenerOptions = {
-        filePath: this.annexLocalPath,
-        contentType:  infoFile.mimeType,
-        openWithDefault: true,
-      };
-      await FileOpener.open(fileOpenerOptions);
-    } catch (error: any) {
-      console.error(`Error al abrir el archivo: ${error.message || error.error?.message || error}`);
+        const fileOpenerOptions: FileOpenerOptions = {
+          filePath: this.annexLocalPath,
+          contentType:  infoFile.mimeType,
+          openWithDefault: true,
+        };
+        await FileOpener.open(fileOpenerOptions);
+      } catch (error: any) {
+        console.error(`Error al abrir el archivo: ${error.message || error.error?.message || error}`);
+      }
+    } else {
+      Browser.open({ url: this.loadFileSrc });
     }
   }
 
@@ -225,6 +234,7 @@ export class AddAttachedPage implements OnInit {
         this.loadFileSrc = currentAttachedData.url!;
         this.scanImgSrc = '';
       } else {
+        this.fileType = currentAttachedData.fileType!;
         this.scanImgSrc = currentAttachedData.url!;
         this.loadFileSrc = '';
       }
@@ -249,21 +259,38 @@ export class AddAttachedPage implements OnInit {
   }
 
   async onFileSelected(event: any) {
-    const file: File = event.target.files[0];
+    let input = event.target as HTMLInputElement;
+    if (!input.files || !input.files[0]) return;
+    let file: File | null = input.files[0];
     const maxSizeInMB = 10;
     const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
 
     if (file.size > maxSizeInBytes) {
       await this.alert('El archivo no debe pesar más de 10MB.');
+      input.value = '';
+      file = null;
       return;
     }
 
     if (file) {
-      this.file = file;
-      this.fileType = file.type.includes('pdf') ? 'pdf' : 'image';
+      // Modificar el nombre del archivo
+      const timestamp = new Date().getTime();
+      const fileExtension = file.name.split('.').pop();
+      const newFileName = this.isOnline() ? `ann.${fileExtension}` : `ann${timestamp}.${fileExtension}`;
+      const newFile = new File([file], newFileName, { type: file.type });
 
-      const fileUrl = URL.createObjectURL(file);
-      this.loadFileSrc = this.sanitizer.bypassSecurityTrustResourceUrl(fileUrl);
+      if (newFile.size > maxSizeInBytes) {
+        await this.alert('El archivo no debe pesar más de 10MB.');
+        input.value = '';
+        file = null;
+        return;
+      }
+
+      this.file = newFile;
+      this.fileType = newFile.type.includes('pdf') ? 'pdf' : 'image';
+
+      const fileUrl = URL.createObjectURL(newFile);
+      this.loadFileSrc = fileUrl;
     }
   }
 
@@ -277,7 +304,7 @@ export class AddAttachedPage implements OnInit {
 
 
   async scan() {
-    const locationData = await this.cameraService.takePictureScan();
+    const locationData = await this.cameraService.takePictureScan(this.isOnline());
     this.originalImageData = locationData;
     this.scanImgSrc = locationData.imagePath;
     const maxSizeInMB = 10;
@@ -338,7 +365,9 @@ export class AddAttachedPage implements OnInit {
         // Comprimir la imagen a JPEG con calidad ajustada
         canvas.toBlob((blob) => {
           if (blob && this.file) {
-            const newFile = new File([blob], this.file.name, { type: 'image/jpeg' });
+            const timestamp = new Date().getTime();
+            const filename = this.isOnline() ? 'ann.jpeg' : `ann${timestamp}.jpeg`;
+            const newFile = new File([blob], filename, { type: 'image/jpeg' });
             this.file = newFile;
 
             // Actualizar la fuente de la imagen para mostrar la versión comprimida
